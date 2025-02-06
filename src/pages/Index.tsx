@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Book } from "@/types";
 import { BookCard } from "@/components/BookCard";
@@ -36,6 +37,7 @@ const Index = () => {
 
   const fetchBooks = async () => {
     try {
+      // Fetch books with their loans, ratings, and reactions
       const { data: booksData, error: booksError } = await supabase
         .from('books')
         .select(`
@@ -43,23 +45,64 @@ const Index = () => {
           title,
           author,
           image_url,
+          average_rating,
+          ai_summary,
           loans (
             lent_to,
             returned_at
+          ),
+          book_ratings (
+            rating
+          ),
+          book_reactions (
+            reaction
           )
         `);
 
       if (booksError) throw booksError;
 
-      const formattedBooks: Book[] = booksData.map(book => ({
-        id: book.id,
-        title: book.title,
-        author: book.author,
-        imageUrl: book.image_url || 'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b',
-        lentTo: book.loans && book.loans.length > 0 && !book.loans[0].returned_at
-          ? book.loans[0].lent_to
-          : null
-      }));
+      // Get user's own ratings if logged in
+      const { data: userRatings } = await supabase
+        .from('book_ratings')
+        .select('book_id, rating')
+        .eq('user_id', user?.id);
+
+      // Get user's reactions if logged in
+      const { data: userReactions } = await supabase
+        .from('book_reactions')
+        .select('book_id, reaction')
+        .eq('user_id', user?.id);
+
+      const formattedBooks: Book[] = booksData.map(book => {
+        // Count reactions
+        const reactionCounts: { [key: string]: number } = {};
+        book.book_reactions?.forEach((r: { reaction: string }) => {
+          reactionCounts[r.reaction] = (reactionCounts[r.reaction] || 0) + 1;
+        });
+
+        // Get user's rating for this book
+        const userRating = userRatings?.find(r => r.book_id === book.id)?.rating;
+
+        // Get user's reactions for this book
+        const bookUserReactions = userReactions
+          ?.filter(r => r.book_id === book.id)
+          .map(r => r.reaction);
+
+        return {
+          id: book.id,
+          title: book.title,
+          author: book.author,
+          imageUrl: book.image_url,
+          lentTo: book.loans && book.loans.length > 0 && !book.loans[0].returned_at
+            ? book.loans[0].lent_to
+            : null,
+          averageRating: book.average_rating,
+          aiSummary: book.ai_summary,
+          userRating,
+          reactions: reactionCounts,
+          userReactions: bookUserReactions,
+        };
+      });
 
       setBooks(formattedBooks);
     } catch (error) {
