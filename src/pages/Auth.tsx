@@ -75,7 +75,7 @@ const Auth = () => {
     <div className="min-h-screen flex items-center justify-center p-4">
       <div className="w-full max-w-md space-y-8">
         <div className="text-center">
-          <h1 className="text-4xl font-bold">Office Library</h1>
+          <h1 className="text-4xl font-bold">cheff.lib</h1>
           {isPendingApproval ? (
             <div className="mt-6 space-y-4">
               <div className="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-lg">
