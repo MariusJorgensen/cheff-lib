@@ -3,4 +3,5 @@ export interface Book {
   title: string;
   author: string;
   lentTo: string | null;
+  imageUrl: string;
 }

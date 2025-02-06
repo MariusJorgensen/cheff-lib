@@ -20,12 +20,13 @@ const Index = () => {
   const [filter, setFilter] = useState("all");
   const { toast } = useToast();
 
-  const addBook = (title: string, author: string) => {
+  const addBook = (title: string, author: string, imageUrl: string) => {
     const newBook: Book = {
       id: Date.now(),
       title,
       author,
       lentTo: null,
+      imageUrl,
     };
     setBooks([...books, newBook]);
     toast({

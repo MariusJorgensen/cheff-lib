@@ -13,6 +13,17 @@ interface BookCardProps {
 export function BookCard({ book, onLend, onReturn }: BookCardProps) {
   return (
     <Card className="glass-card">
+      <div className="relative h-48 w-full overflow-hidden rounded-t-lg">
+        <img
+          src={book.imageUrl}
+          alt={book.title}
+          className="h-full w-full object-cover transition-transform hover:scale-105"
+          onError={(e) => {
+            const target = e.target as HTMLImageElement;
+            target.src = "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b";
+          }}
+        />
+      </div>
       <CardHeader>
         <CardTitle className="flex justify-between items-start">
           <span>{book.title}</span>
