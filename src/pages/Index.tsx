@@ -33,7 +33,7 @@ const Index = () => {
 
   useEffect(() => {
     fetchBooks();
-  }, []);
+  }, [user]); // Add user as a dependency to refetch when auth state changes
 
   const fetchBooks = async () => {
     try {
@@ -61,17 +61,24 @@ const Index = () => {
 
       if (booksError) throw booksError;
 
-      // Get user's own ratings if logged in
-      const { data: userRatings } = await supabase
-        .from('book_ratings')
-        .select('book_id, rating')
-        .eq('user_id', user?.id);
+      // Only fetch user-specific data if user is logged in
+      let userRatings = null;
+      let userReactions = null;
 
-      // Get user's reactions if logged in
-      const { data: userReactions } = await supabase
-        .from('book_reactions')
-        .select('book_id, reaction')
-        .eq('user_id', user?.id);
+      if (user) {
+        const { data: ratings } = await supabase
+          .from('book_ratings')
+          .select('book_id, rating')
+          .eq('user_id', user.id);
+        
+        const { data: reactions } = await supabase
+          .from('book_reactions')
+          .select('book_id, reaction')
+          .eq('user_id', user.id);
+
+        userRatings = ratings;
+        userReactions = reactions;
+      }
 
       const formattedBooks: Book[] = booksData.map(book => {
         // Count reactions
@@ -80,10 +87,10 @@ const Index = () => {
           reactionCounts[r.reaction] = (reactionCounts[r.reaction] || 0) + 1;
         });
 
-        // Get user's rating for this book
+        // Get user's rating for this book if user is logged in
         const userRating = userRatings?.find(r => r.book_id === book.id)?.rating;
 
-        // Get user's reactions for this book
+        // Get user's reactions for this book if user is logged in
         const bookUserReactions = userReactions
           ?.filter(r => r.book_id === book.id)
           .map(r => r.reaction);
@@ -100,7 +107,7 @@ const Index = () => {
           aiSummary: book.ai_summary,
           userRating,
           reactions: reactionCounts,
-          userReactions: bookUserReactions,
+          userReactions: bookUserReactions || [],
         };
       });
 
@@ -288,4 +295,3 @@ const Index = () => {
 };
 
 export default Index;
-
