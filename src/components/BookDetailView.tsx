@@ -139,11 +139,9 @@ export function BookDetailView({ book, onLend, onReturn, onClose }: BookDetailVi
         .eq('book_id', book.id)
         .eq('user_id', user.id)
         .eq('reaction', reactionName)
-        .single();
+        .maybeSingle();  // Changed from .single() to .maybeSingle()
 
-      if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 means no rows returned
-        throw fetchError;
-      }
+      if (fetchError) throw fetchError;
 
       if (existingReaction) {
         // If reaction exists, delete it
