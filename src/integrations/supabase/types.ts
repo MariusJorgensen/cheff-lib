@@ -9,9 +9,128 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      book_comments: {
+        Row: {
+          book_id: number | null
+          comment: string
+          created_at: string
+          id: number
+          user_id: string | null
+        }
+        Insert: {
+          book_id?: number | null
+          comment: string
+          created_at?: string
+          id?: number
+          user_id?: string | null
+        }
+        Update: {
+          book_id?: number | null
+          comment?: string
+          created_at?: string
+          id?: number
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "book_comments_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "book_comments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      book_ratings: {
+        Row: {
+          book_id: number | null
+          created_at: string
+          id: number
+          rating: number
+          user_id: string | null
+        }
+        Insert: {
+          book_id?: number | null
+          created_at?: string
+          id?: number
+          rating: number
+          user_id?: string | null
+        }
+        Update: {
+          book_id?: number | null
+          created_at?: string
+          id?: number
+          rating?: number
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "book_ratings_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "book_ratings_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      book_reactions: {
+        Row: {
+          book_id: number | null
+          created_at: string
+          id: number
+          reaction: string
+          user_id: string | null
+        }
+        Insert: {
+          book_id?: number | null
+          created_at?: string
+          id?: number
+          reaction: string
+          user_id?: string | null
+        }
+        Update: {
+          book_id?: number | null
+          created_at?: string
+          id?: number
+          reaction?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "book_reactions_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "book_reactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       books: {
         Row: {
+          ai_summary: string | null
           author: string
+          average_rating: number | null
           created_at: string | null
           id: number
           image_url: string | null
@@ -19,7 +138,9 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          ai_summary?: string | null
           author: string
+          average_rating?: number | null
           created_at?: string | null
           id?: never
           image_url?: string | null
@@ -27,7 +148,9 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          ai_summary?: string | null
           author?: string
+          average_rating?: number | null
           created_at?: string | null
           id?: never
           image_url?: string | null
