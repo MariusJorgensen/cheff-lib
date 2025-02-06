@@ -1,23 +1,14 @@
 
 import { Book, Comment } from "@/types";
 import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/components/AuthProvider";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Star, StarHalf, StarOff, BookOpen, User } from "lucide-react";
+import { BookImageSection } from "./book-detail/BookImageSection";
+import { BookRating } from "./book-detail/BookRating";
+import { BookReactions } from "./book-detail/BookReactions";
+import { BookComments } from "./book-detail/BookComments";
+import { BookLendingControls } from "./book-detail/BookLendingControls";
 
 interface BookDetailViewProps {
   book: Book;
@@ -26,32 +17,11 @@ interface BookDetailViewProps {
   onClose: () => void;
 }
 
-const REACTIONS = [
-  { emoji: "👍", name: "thumbsup" },
-  { emoji: "❤️", name: "heart" },
-  { emoji: "😄", name: "smile" },
-  { emoji: "🤓", name: "nerd" },
-  { emoji: "📚", name: "book" },
-];
-
 export function BookDetailView({ book, onLend, onReturn, onClose }: BookDetailViewProps) {
-  const [showReturnDialog, setShowReturnDialog] = useState(false);
-  const [showLendDialog, setShowLendDialog] = useState(false);
-  const [borrowerName, setBorrowerName] = useState("");
-  const [newComment, setNewComment] = useState("");
   const [comments, setComments] = useState<Comment[]>([]);
   const [isLoadingComments, setIsLoadingComments] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
-
-  const handleLendSubmit = () => {
-    if (borrowerName.trim()) {
-      onLend(book.id, borrowerName);
-      setShowLendDialog(false);
-      setBorrowerName("");
-      onClose();
-    }
-  };
 
   const fetchComments = async () => {
     setIsLoadingComments(true);
@@ -93,9 +63,7 @@ export function BookDetailView({ book, onLend, onReturn, onClose }: BookDetailVi
     }
   };
 
-  const handleAddComment = async () => {
-    if (!newComment.trim()) return;
-
+  const handleAddComment = async (newComment: string) => {
     try {
       const { error } = await supabase
         .from('book_comments')
@@ -109,7 +77,6 @@ export function BookDetailView({ book, onLend, onReturn, onClose }: BookDetailVi
 
       if (error) throw error;
 
-      setNewComment("");
       fetchComments();
 
       await supabase.functions.invoke('generate-summary', {
@@ -195,168 +162,20 @@ export function BookDetailView({ book, onLend, onReturn, onClose }: BookDetailVi
 
   return (
     <div className="space-y-6">
-      <div className="flex gap-4">
-        <img
-          src={book.imageUrl}
-          alt={book.title}
-          className="h-48 w-36 object-cover rounded-lg"
-          onError={(e) => {
-            const target = e.target as HTMLImageElement;
-            target.src = "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b";
-          }}
-        />
-        <div className="flex-1 space-y-4">
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <BookOpen className="h-4 w-4" />
-            <span>{book.author}</span>
-          </div>
-
-          {book.aiSummary && (
-            <p className="text-sm italic text-muted-foreground">
-              "{book.aiSummary}"
-            </p>
-          )}
-
-          {book.lentTo && (
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <User className="h-4 w-4" />
-              <span>Borrowed by: {book.lentTo}</span>
-            </div>
-          )}
-
-          <div className="flex items-center gap-2">
-            {[1, 2, 3, 4, 5].map((rating) => (
-              <button
-                key={rating}
-                onClick={() => handleRate(rating)}
-                className="text-yellow-500 hover:text-yellow-600 transition-colors"
-              >
-                {rating <= (book.averageRating || 0) ? (
-                  <Star className="h-5 w-5 fill-current" />
-                ) : rating - 0.5 <= (book.averageRating || 0) ? (
-                  <StarHalf className="h-5 w-5 fill-current" />
-                ) : (
-                  <StarOff className="h-5 w-5" />
-                )}
-              </button>
-            ))}
-            {book.averageRating && (
-              <span className="text-sm text-muted-foreground">
-                ({book.averageRating.toFixed(1)})
-              </span>
-            )}
-          </div>
-
-          <div className="flex gap-2">
-            {REACTIONS.map(({ emoji, name }) => (
-              <button
-                key={name}
-                onClick={() => handleReaction(name)}
-                className={`text-2xl transition-transform hover:scale-110 ${
-                  book.userReactions?.includes(name) ? 'opacity-100' : 'opacity-50'
-                }`}
-              >
-                {emoji}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      <div className="space-y-4">
-        <div className="flex gap-2">
-          <Textarea
-            placeholder="Add a comment..."
-            value={newComment}
-            onChange={(e) => setNewComment(e.target.value)}
-          />
-          <Button onClick={handleAddComment}>Post</Button>
-        </div>
-
-        <div className="space-y-4">
-          {isLoadingComments ? (
-            <p className="text-center text-muted-foreground">Loading comments...</p>
-          ) : comments.length > 0 ? (
-            comments.map((comment) => (
-              <div key={comment.id} className="border rounded-lg p-4">
-                <div className="flex justify-between items-start mb-2">
-                  <span className="font-medium">
-                    {comment.user.fullName || comment.user.email}
-                  </span>
-                  <span className="text-sm text-muted-foreground">
-                    {new Date(comment.createdAt).toLocaleDateString()}
-                  </span>
-                </div>
-                <p className="text-sm">{comment.comment}</p>
-              </div>
-            ))
-          ) : (
-            <p className="text-center text-muted-foreground">No comments yet</p>
-          )}
-        </div>
-      </div>
-
-      {book.lentTo ? (
-        <>
-          <Button variant="outline" onClick={() => setShowReturnDialog(true)} className="w-full">
-            Return Book
-          </Button>
-          <AlertDialog open={showReturnDialog} onOpenChange={setShowReturnDialog}>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Return Book</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Are you sure you want to mark "{book.title}" as returned from {book.lentTo}?
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={() => {
-                  onReturn(book.id);
-                  setShowReturnDialog(false);
-                  onClose();
-                }}>
-                  Confirm Return
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </>
-      ) : (
-        <>
-          <Button variant="outline" onClick={() => setShowLendDialog(true)} className="w-full">
-            Lend Book
-          </Button>
-          <AlertDialog open={showLendDialog} onOpenChange={setShowLendDialog}>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Lend Book</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Enter the name of the person borrowing "{book.title}"
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <div className="grid gap-4 py-4">
-                <Input
-                  placeholder="Borrower's name"
-                  value={borrowerName}
-                  onChange={(e) => setBorrowerName(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && borrowerName.trim()) {
-                      handleLendSubmit();
-                    }
-                  }}
-                />
-              </div>
-              <AlertDialogFooter>
-                <AlertDialogCancel onClick={() => setBorrowerName("")}>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleLendSubmit} disabled={!borrowerName.trim()}>
-                  Confirm Loan
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </>
-      )}
+      <BookImageSection book={book} />
+      <BookRating book={book} onRate={handleRate} />
+      <BookReactions userReactions={book.userReactions} onReaction={handleReaction} />
+      <BookComments 
+        comments={comments}
+        isLoading={isLoadingComments}
+        onAddComment={handleAddComment}
+      />
+      <BookLendingControls
+        book={book}
+        onLend={onLend}
+        onReturn={onReturn}
+        onClose={onClose}
+      />
     </div>
   );
 }
