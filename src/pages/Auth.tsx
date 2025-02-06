@@ -31,7 +31,9 @@ const Auth = () => {
   };
 
   const validateEmail = (email: string) => {
-    return email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/);
+    // More comprehensive email validation
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    return emailRegex.test(email) && !email.endsWith('test.com');
   };
 
   const validatePassword = (password: string) => {
@@ -44,7 +46,7 @@ const Auth = () => {
     if (!validateEmail(email)) {
       toast({
         title: "Invalid Email",
-        description: "Please enter a valid email address",
+        description: "Please enter a valid email address (e.g. user@gmail.com)",
         variant: "destructive",
       });
       return;
@@ -80,7 +82,7 @@ const Auth = () => {
     if (!validateEmail(email)) {
       toast({
         title: "Invalid Email",
-        description: "Please enter a valid email address",
+        description: "Please enter a valid email address (e.g. user@gmail.com)",
         variant: "destructive",
       });
       return;
