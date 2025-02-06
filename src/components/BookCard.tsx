@@ -3,6 +3,25 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { BookOpen, User } from "lucide-react";
+import { useState } from "react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import { Input } from "@/components/ui/input";
 
 interface BookCardProps {
   book: Book;
@@ -11,6 +30,18 @@ interface BookCardProps {
 }
 
 export function BookCard({ book, onLend, onReturn }: BookCardProps) {
+  const [showReturnDialog, setShowReturnDialog] = useState(false);
+  const [showLendSheet, setShowLendSheet] = useState(false);
+  const [borrowerName, setBorrowerName] = useState("");
+
+  const handleLendSubmit = () => {
+    if (borrowerName.trim()) {
+      onLend(book.id);
+      setShowLendSheet(false);
+      setBorrowerName("");
+    }
+  };
+
   return (
     <Card className="glass-card">
       <div className="relative h-48 w-full overflow-hidden rounded-t-lg">
@@ -44,12 +75,63 @@ export function BookCard({ book, onLend, onReturn }: BookCardProps) {
               <span>Borrowed by: {book.lentTo}</span>
             </div>
           )}
-          <Button
-            variant="outline"
-            onClick={() => (book.lentTo ? onReturn(book.id) : onLend(book.id))}
-          >
-            {book.lentTo ? "Return Book" : "Lend Book"}
-          </Button>
+          {book.lentTo ? (
+            <>
+              <Button variant="outline" onClick={() => setShowReturnDialog(true)}>
+                Return Book
+              </Button>
+              <AlertDialog open={showReturnDialog} onOpenChange={setShowReturnDialog}>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Return Book</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to mark "{book.title}" as returned from {book.lentTo}?
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => {
+                      onReturn(book.id);
+                      setShowReturnDialog(false);
+                    }}>
+                      Confirm Return
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </>
+          ) : (
+            <>
+              <Button variant="outline" onClick={() => setShowLendSheet(true)}>
+                Lend Book
+              </Button>
+              <Sheet open={showLendSheet} onOpenChange={setShowLendSheet}>
+                <SheetContent>
+                  <SheetHeader>
+                    <SheetTitle>Lend Book</SheetTitle>
+                    <SheetDescription>
+                      Enter the name of the person borrowing "{book.title}"
+                    </SheetDescription>
+                  </SheetHeader>
+                  <div className="grid gap-4 py-4">
+                    <Input
+                      placeholder="Borrower's name"
+                      value={borrowerName}
+                      onChange={(e) => setBorrowerName(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          handleLendSubmit();
+                        }
+                      }}
+                    />
+                    <Button onClick={handleLendSubmit} disabled={!borrowerName.trim()}>
+                      Confirm Loan
+                    </Button>
+                  </div>
+                </SheetContent>
+              </Sheet>
+            </>
+          )}
         </div>
       </CardContent>
     </Card>
