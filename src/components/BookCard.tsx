@@ -1,4 +1,3 @@
-
 import { Book, Comment } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -154,13 +153,16 @@ export function BookCard({ book, onLend, onReturn }: BookCardProps) {
     try {
       const { error } = await supabase
         .from('book_ratings')
-        .upsert([
+        .upsert(
           {
             book_id: book.id,
             user_id: user?.id,
             rating
+          },
+          {
+            onConflict: 'book_id,user_id'
           }
-        ]);
+        );
 
       if (error) throw error;
 
