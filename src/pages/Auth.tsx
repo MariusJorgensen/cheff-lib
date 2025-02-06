@@ -31,9 +31,11 @@ const Auth = () => {
   };
 
   const validateEmail = (email: string) => {
-    // More comprehensive email validation
+    // Common email validation pattern
     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-    return emailRegex.test(email) && !email.endsWith('test.com');
+    const validDomains = ['gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com'];
+    const domain = email.split('@')[1];
+    return emailRegex.test(email) && validDomains.includes(domain);
   };
 
   const validatePassword = (password: string) => {
@@ -46,7 +48,7 @@ const Auth = () => {
     if (!validateEmail(email)) {
       toast({
         title: "Invalid Email",
-        description: "Please enter a valid email address (e.g. user@gmail.com)",
+        description: "Please use a valid email address from Gmail, Yahoo, Outlook, or Hotmail",
         variant: "destructive",
       });
       return;
@@ -67,7 +69,19 @@ const Auth = () => {
         password,
       });
       
-      if (error) throw error;
+      if (error) {
+        if (error.message.includes('Invalid login credentials')) {
+          toast({
+            title: "Login Failed",
+            description: "Email or password is incorrect. Please try again or create a new account.",
+            variant: "destructive",
+          });
+        } else {
+          throw error;
+        }
+        return;
+      }
+      
       navigate('/');
     } catch (error: any) {
       toast({
@@ -82,7 +96,7 @@ const Auth = () => {
     if (!validateEmail(email)) {
       toast({
         title: "Invalid Email",
-        description: "Please enter a valid email address (e.g. user@gmail.com)",
+        description: "Please use a valid email address from Gmail, Yahoo, Outlook, or Hotmail",
         variant: "destructive",
       });
       return;
