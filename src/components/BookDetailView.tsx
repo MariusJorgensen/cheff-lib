@@ -98,13 +98,22 @@ export function BookDetailView({ book, onLend, onReturn, onClose }: BookDetailVi
   };
 
   const handleRate = async (rating: number) => {
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to rate books",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       const { error } = await supabase
         .from('book_ratings')
         .upsert(
           {
             book_id: book.id,
-            user_id: user?.id,
+            user_id: user.id,
             rating
           },
           {
@@ -192,7 +201,9 @@ export function BookDetailView({ book, onLend, onReturn, onClose }: BookDetailVi
   return (
     <div className="space-y-6">
       <BookImageSection book={book} />
-      <BookRating book={book} onRate={handleRate} />
+      <div className="p-4 rounded-lg bg-card">
+        <BookRating book={book} onRate={handleRate} />
+      </div>
       <BookReactions userReactions={book.userReactions} onReaction={handleReaction} />
       <BookComments 
         comments={comments}
