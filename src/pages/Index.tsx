@@ -132,7 +132,11 @@ const Index = () => {
         title: data.title,
         author: data.author,
         imageUrl: data.image_url,
-        lentTo: null
+        lentTo: null,
+        averageRating: null,  // Add this line
+        aiSummary: null,      // Add this line
+        reactions: {},        // Add this line
+        userReactions: []     // Add this line
       };
 
       setBooks([...books, newBook]);
@@ -284,3 +288,4 @@ const Index = () => {
 };
 
 export default Index;
+
