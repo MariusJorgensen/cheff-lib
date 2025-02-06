@@ -52,34 +52,7 @@ export function useBooks(user: User | null) {
         userReactions = reactions;
       }
 
-      const formattedBooks: Book[] = booksData.map(book => {
-        const reactionCounts: { [key: string]: number } = {};
-        book.book_reactions?.forEach((r: { reaction: string }) => {
-          reactionCounts[r.reaction] = (reactionCounts[r.reaction] || 0) + 1;
-        });
-
-        const userRating = userRatings?.find(r => r.book_id === book.id)?.rating;
-
-        const bookUserReactions = userReactions
-          ?.filter(r => r.book_id === book.id)
-          .map(r => r.reaction);
-
-        return {
-          id: book.id,
-          title: book.title,
-          author: book.author,
-          imageUrl: book.image_url,
-          lentTo: book.loans && book.loans.length > 0 && !book.loans[0].returned_at
-            ? book.loans[0].lent_to
-            : null,
-          averageRating: book.average_rating,
-          aiSummary: book.ai_summary,
-          userRating,
-          reactions: reactionCounts,
-          userReactions: bookUserReactions || [],
-        };
-      });
-
+      const formattedBooks: Book[] = booksData.map(book => formatBookData(book, userRatings, userReactions));
       setBooks(formattedBooks);
     } catch (error) {
       console.error('Error fetching books:', error);
@@ -89,6 +62,38 @@ export function useBooks(user: User | null) {
         variant: "destructive",
       });
     }
+  };
+
+  const formatBookData = (
+    book: any, 
+    userRatings: any[] | null, 
+    userReactions: any[] | null
+  ): Book => {
+    const reactionCounts: { [key: string]: number } = {};
+    book.book_reactions?.forEach((r: { reaction: string }) => {
+      reactionCounts[r.reaction] = (reactionCounts[r.reaction] || 0) + 1;
+    });
+
+    const userRating = userRatings?.find(r => r.book_id === book.id)?.rating;
+
+    const bookUserReactions = userReactions
+      ?.filter(r => r.book_id === book.id)
+      .map(r => r.reaction);
+
+    return {
+      id: book.id,
+      title: book.title,
+      author: book.author,
+      imageUrl: book.image_url,
+      lentTo: book.loans && book.loans.length > 0 && !book.loans[0].returned_at
+        ? book.loans[0].lent_to
+        : null,
+      averageRating: book.average_rating,
+      aiSummary: book.ai_summary,
+      userRating,
+      reactions: reactionCounts,
+      userReactions: bookUserReactions || [],
+    };
   };
 
   const addBook = async (title: string, author: string, imageUrl: string) => {
@@ -188,6 +193,63 @@ export function useBooks(user: User | null) {
 
   useEffect(() => {
     fetchBooks();
+
+    // Subscribe to real-time changes
+    const channel = supabase
+      .channel('book-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'books'
+        },
+        () => {
+          console.log('Books table changed, refreshing...');
+          fetchBooks();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'book_ratings'
+        },
+        () => {
+          console.log('Ratings changed, refreshing...');
+          fetchBooks();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'book_reactions'
+        },
+        () => {
+          console.log('Reactions changed, refreshing...');
+          fetchBooks();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'loans'
+        },
+        () => {
+          console.log('Loans changed, refreshing...');
+          fetchBooks();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user]);
 
   return { books, addBook, lendBook, returnBook };
