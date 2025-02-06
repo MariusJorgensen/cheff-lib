@@ -129,28 +129,59 @@ export function BookDetailView({ book, onLend, onReturn, onClose }: BookDetailVi
   };
 
   const handleReaction = async (reactionName: string) => {
+    if (!user) return;
+    
     try {
-      const { error } = await supabase
+      // First check if the reaction already exists
+      const { data: existingReaction, error: fetchError } = await supabase
         .from('book_reactions')
-        .upsert([
-          {
-            book_id: book.id,
-            user_id: user?.id,
-            reaction: reactionName
-          }
-        ]);
+        .select('id')
+        .eq('book_id', book.id)
+        .eq('user_id', user.id)
+        .eq('reaction', reactionName)
+        .single();
 
-      if (error) throw error;
+      if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 means no rows returned
+        throw fetchError;
+      }
 
-      toast({
-        title: "Success",
-        description: "Reaction added!",
-      });
+      if (existingReaction) {
+        // If reaction exists, delete it
+        const { error: deleteError } = await supabase
+          .from('book_reactions')
+          .delete()
+          .eq('id', existingReaction.id);
+
+        if (deleteError) throw deleteError;
+
+        toast({
+          title: "Success",
+          description: "Reaction removed!",
+        });
+      } else {
+        // If reaction doesn't exist, add it
+        const { error: insertError } = await supabase
+          .from('book_reactions')
+          .insert([
+            {
+              book_id: book.id,
+              user_id: user.id,
+              reaction: reactionName
+            }
+          ]);
+
+        if (insertError) throw insertError;
+
+        toast({
+          title: "Success",
+          description: "Reaction added!",
+        });
+      }
     } catch (error) {
-      console.error('Error adding reaction:', error);
+      console.error('Error toggling reaction:', error);
       toast({
         title: "Error",
-        description: "Failed to add reaction. Please try again.",
+        description: "Failed to update reaction. Please try again.",
         variant: "destructive",
       });
     }

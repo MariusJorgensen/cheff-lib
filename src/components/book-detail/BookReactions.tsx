@@ -22,6 +22,7 @@ export function BookReactions({ userReactions = [], onReaction }: BookReactionsP
           className={`text-2xl transition-transform hover:scale-110 ${
             userReactions.includes(name) ? 'opacity-100' : 'opacity-50'
           }`}
+          aria-label={`${userReactions.includes(name) ? 'Remove' : 'Add'} ${name} reaction`}
         >
           {emoji}
         </button>
