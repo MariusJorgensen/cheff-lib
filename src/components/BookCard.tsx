@@ -14,13 +14,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 
 interface BookCardProps {
@@ -31,13 +24,13 @@ interface BookCardProps {
 
 export function BookCard({ book, onLend, onReturn }: BookCardProps) {
   const [showReturnDialog, setShowReturnDialog] = useState(false);
-  const [showLendSheet, setShowLendSheet] = useState(false);
+  const [showLendDialog, setShowLendDialog] = useState(false);
   const [borrowerName, setBorrowerName] = useState("");
 
   const handleLendSubmit = () => {
     if (borrowerName.trim()) {
       onLend(book.id, borrowerName);
-      setShowLendSheet(false);
+      setShowLendDialog(false);
       setBorrowerName("");
     }
   };
@@ -102,34 +95,37 @@ export function BookCard({ book, onLend, onReturn }: BookCardProps) {
             </>
           ) : (
             <>
-              <Button variant="outline" onClick={() => setShowLendSheet(true)}>
+              <Button variant="outline" onClick={() => setShowLendDialog(true)}>
                 Lend Book
               </Button>
-              <Sheet open={showLendSheet} onOpenChange={setShowLendSheet}>
-                <SheetContent>
-                  <SheetHeader>
-                    <SheetTitle>Lend Book</SheetTitle>
-                    <SheetDescription>
+              <AlertDialog open={showLendDialog} onOpenChange={setShowLendDialog}>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Lend Book</AlertDialogTitle>
+                    <AlertDialogDescription>
                       Enter the name of the person borrowing "{book.title}"
-                    </SheetDescription>
-                  </SheetHeader>
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
                   <div className="grid gap-4 py-4">
                     <Input
                       placeholder="Borrower's name"
                       value={borrowerName}
                       onChange={(e) => setBorrowerName(e.target.value)}
                       onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
+                        if (e.key === 'Enter' && borrowerName.trim()) {
                           handleLendSubmit();
                         }
                       }}
                     />
-                    <Button onClick={handleLendSubmit} disabled={!borrowerName.trim()}>
-                      Confirm Loan
-                    </Button>
                   </div>
-                </SheetContent>
-              </Sheet>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel onClick={() => setBorrowerName("")}>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleLendSubmit} disabled={!borrowerName.trim()}>
+                      Confirm Loan
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </>
           )}
         </div>
