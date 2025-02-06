@@ -98,34 +98,31 @@ const Index = () => {
     }
   };
 
-  const lendBook = async (id: number) => {
-    const borrower = prompt("Enter borrower's name:");
-    if (borrower) {
-      try {
-        const { error } = await supabase
-          .from('loans')
-          .insert([
-            { book_id: id, lent_to: borrower }
-          ]);
+  const lendBook = async (id: number, borrowerName: string) => {
+    try {
+      const { error } = await supabase
+        .from('loans')
+        .insert([
+          { book_id: id, lent_to: borrowerName }
+        ]);
 
-        if (error) throw error;
+      if (error) throw error;
 
-        setBooks(books.map(book =>
-          book.id === id ? { ...book, lentTo: borrower } : book
-        ));
-        
-        toast({
-          title: "Success",
-          description: `Book has been lent to ${borrower}.`,
-        });
-      } catch (error) {
-        console.error('Error lending book:', error);
-        toast({
-          title: "Error",
-          description: "Failed to lend book. Please try again.",
-          variant: "destructive",
-        });
-      }
+      setBooks(books.map(book =>
+        book.id === id ? { ...book, lentTo: borrowerName } : book
+      ));
+      
+      toast({
+        title: "Success",
+        description: `Book has been lent to ${borrowerName}.`,
+      });
+    } catch (error) {
+      console.error('Error lending book:', error);
+      toast({
+        title: "Error",
+        description: "Failed to lend book. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 

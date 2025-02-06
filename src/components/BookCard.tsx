@@ -25,7 +25,7 @@ import { Input } from "@/components/ui/input";
 
 interface BookCardProps {
   book: Book;
-  onLend: (id: number) => void;
+  onLend: (id: number, borrowerName: string) => void;
   onReturn: (id: number) => void;
 }
 
@@ -36,7 +36,7 @@ export function BookCard({ book, onLend, onReturn }: BookCardProps) {
 
   const handleLendSubmit = () => {
     if (borrowerName.trim()) {
-      onLend(book.id);
+      onLend(book.id, borrowerName);
       setShowLendSheet(false);
       setBorrowerName("");
     }
