@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Book } from "@/types";
 import { BookCard } from "@/components/BookCard";
 import { AddBookDialog } from "@/components/AddBookDialog";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Input } from "@/components/ui/input";
+import { useToast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Select,
   SelectContent,
@@ -11,7 +13,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useToast } from "@/components/ui/use-toast";
 import { Search } from "lucide-react";
 
 const Index = () => {
@@ -20,42 +21,140 @@ const Index = () => {
   const [filter, setFilter] = useState("all");
   const { toast } = useToast();
 
-  const addBook = (title: string, author: string, imageUrl: string) => {
-    const newBook: Book = {
-      id: Date.now(),
-      title,
-      author,
-      lentTo: null,
-      imageUrl,
-    };
-    setBooks([...books, newBook]);
-    toast({
-      title: "Book Added",
-      description: `${title} has been added to the library.`,
-    });
-  };
+  useEffect(() => {
+    fetchBooks();
+  }, []);
 
-  const lendBook = (id: number) => {
-    const borrower = prompt("Enter borrower's name:");
-    if (borrower) {
-      setBooks(
-        books.map((book) =>
-          book.id === id ? { ...book, lentTo: borrower } : book
-        )
-      );
+  const fetchBooks = async () => {
+    try {
+      const { data: booksData, error: booksError } = await supabase
+        .from('books')
+        .select(`
+          id,
+          title,
+          author,
+          image_url,
+          loans (
+            lent_to,
+            returned_at
+          )
+        `);
+
+      if (booksError) throw booksError;
+
+      const formattedBooks: Book[] = booksData.map(book => ({
+        id: book.id,
+        title: book.title,
+        author: book.author,
+        imageUrl: book.image_url || 'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b',
+        lentTo: book.loans && book.loans.length > 0 && !book.loans[0].returned_at
+          ? book.loans[0].lent_to
+          : null
+      }));
+
+      setBooks(formattedBooks);
+    } catch (error) {
+      console.error('Error fetching books:', error);
       toast({
-        title: "Book Lent",
-        description: `Book has been lent to ${borrower}.`,
+        title: "Error",
+        description: "Failed to load books. Please try again.",
+        variant: "destructive",
       });
     }
   };
 
-  const returnBook = (id: number) => {
-    setBooks(books.map((book) => (book.id === id ? { ...book, lentTo: null } : book)));
-    toast({
-      title: "Book Returned",
-      description: "Book has been returned to the library.",
-    });
+  const addBook = async (title: string, author: string, imageUrl: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('books')
+        .insert([
+          { title, author, image_url: imageUrl || undefined }
+        ])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const newBook: Book = {
+        id: data.id,
+        title: data.title,
+        author: data.author,
+        imageUrl: data.image_url,
+        lentTo: null
+      };
+
+      setBooks([...books, newBook]);
+      toast({
+        title: "Success",
+        description: `${title} has been added to the library.`,
+      });
+    } catch (error) {
+      console.error('Error adding book:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add book. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const lendBook = async (id: number) => {
+    const borrower = prompt("Enter borrower's name:");
+    if (borrower) {
+      try {
+        const { error } = await supabase
+          .from('loans')
+          .insert([
+            { book_id: id, lent_to: borrower }
+          ]);
+
+        if (error) throw error;
+
+        setBooks(books.map(book =>
+          book.id === id ? { ...book, lentTo: borrower } : book
+        ));
+        
+        toast({
+          title: "Success",
+          description: `Book has been lent to ${borrower}.`,
+        });
+      } catch (error) {
+        console.error('Error lending book:', error);
+        toast({
+          title: "Error",
+          description: "Failed to lend book. Please try again.",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
+  const returnBook = async (id: number) => {
+    try {
+      const { error } = await supabase
+        .from('loans')
+        .update({ returned_at: new Date().toISOString() })
+        .eq('book_id', id)
+        .is('returned_at', null);
+
+      if (error) throw error;
+
+      setBooks(books.map(book =>
+        book.id === id ? { ...book, lentTo: null } : book
+      ));
+      
+      toast({
+        title: "Success",
+        description: "Book has been returned to the library.",
+      });
+    } catch (error) {
+      console.error('Error returning book:', error);
+      toast({
+        title: "Error",
+        description: "Failed to return book. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const filteredBooks = books.filter((book) => {

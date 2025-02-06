@@ -9,7 +9,65 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      books: {
+        Row: {
+          author: string
+          created_at: string | null
+          id: number
+          image_url: string | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          author: string
+          created_at?: string | null
+          id?: never
+          image_url?: string | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          author?: string
+          created_at?: string | null
+          id?: never
+          image_url?: string | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      loans: {
+        Row: {
+          book_id: number | null
+          id: number
+          lent_at: string | null
+          lent_to: string
+          returned_at: string | null
+        }
+        Insert: {
+          book_id?: number | null
+          id?: never
+          lent_at?: string | null
+          lent_to: string
+          returned_at?: string | null
+        }
+        Update: {
+          book_id?: number | null
+          id?: never
+          lent_at?: string | null
+          lent_to?: string
+          returned_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loans_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
