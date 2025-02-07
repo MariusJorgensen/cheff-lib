@@ -25,6 +25,9 @@ const Auth = () => {
         provider: 'google',
         options: {
           redirectTo: `${window.location.origin}/auth`,
+          queryParams: {
+            prompt: 'select_account', // Forces Google to show the account selector
+          },
         },
       });
       
