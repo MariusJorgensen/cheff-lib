@@ -13,11 +13,8 @@ const Auth = () => {
   const { session } = useAuth();
 
   useEffect(() => {
-    // Check URL parameters for access_token which indicates successful OAuth
-    const params = new URLSearchParams(window.location.hash.substring(1));
-    const accessToken = params.get('access_token');
-
-    if (accessToken || session) {
+    console.log("Auth component session:", session);
+    if (session) {
       navigate('/');
     }
     setIsLoading(false);
@@ -28,7 +25,7 @@ const Auth = () => {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: window.location.origin,
+          redirectTo: window.location.origin + '/auth',
           skipBrowserRedirect: false,
           queryParams: {
             prompt: 'select_account',
