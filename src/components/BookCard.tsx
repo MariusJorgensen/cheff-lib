@@ -2,9 +2,8 @@
 import { Book } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { BookOpen, Star } from "lucide-react";
+import { BookOpen } from "lucide-react";
 import { useState } from "react";
 import { BookDetailView } from "./BookDetailView";
 
@@ -22,27 +21,33 @@ export function BookCard({ book, onLend, onReturn }: BookCardProps) {
 
   return (
     <>
-      <Card 
-        className="glass-card cursor-pointer transition-transform hover:scale-105"
-        onClick={() => setShowDetailDialog(true)}
-      >
-        <div className="relative h-48 w-full overflow-hidden rounded-t-lg">
-          <img
-            src={book.imageUrl}
-            alt={book.title}
-            className="h-full w-full object-cover"
-            onError={(e) => {
-              const target = e.target as HTMLImageElement;
-              target.src = "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b";
-            }}
-          />
+      <Card className="glass-card cursor-pointer transition-transform hover:scale-105">
+        <div className="relative">
+          <div className="absolute top-2 right-2 z-10">
+            <Badge variant={book.lentTo ? "destructive" : "secondary"} 
+                  className="cursor-pointer"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowDetailDialog(true);
+                  }}>
+              {book.lentTo ? "On Loan" : "Lend Book"}
+            </Badge>
+          </div>
+          <div className="h-48 w-full overflow-hidden rounded-t-lg" onClick={() => setShowDetailDialog(true)}>
+            <img
+              src={book.imageUrl}
+              alt={book.title}
+              className="h-full w-full object-cover"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.src = "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b";
+              }}
+            />
+          </div>
         </div>
         <CardHeader>
           <CardTitle className="flex justify-between items-start">
             <span>{book.title}</span>
-            <Badge variant={book.lentTo ? "destructive" : "secondary"}>
-              {book.lentTo ? "On Loan" : "Available"}
-            </Badge>
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -52,16 +57,10 @@ export function BookCard({ book, onLend, onReturn }: BookCardProps) {
               <span>{book.author}</span>
             </div>
 
-            <div className="flex justify-between items-center text-sm text-muted-foreground">
-              <div className="flex items-center gap-1">
-                <Star className="h-4 w-4" />
-                <span>{book.averageRating ? book.averageRating.toFixed(1) : "No ratings"}</span>
-              </div>
-              <div>
-                {totalReactions > 0 && (
-                  <span>{totalReactions} reaction{totalReactions !== 1 ? 's' : ''}</span>
-                )}
-              </div>
+            <div className="text-sm text-muted-foreground">
+              {totalReactions > 0 && (
+                <span>{totalReactions} reaction{totalReactions !== 1 ? 's' : ''}</span>
+              )}
             </div>
           </div>
         </CardContent>
