@@ -13,7 +13,11 @@ const Auth = () => {
   const { session } = useAuth();
 
   useEffect(() => {
-    if (session) {
+    // Check URL parameters for access_token which indicates successful OAuth
+    const params = new URLSearchParams(window.location.hash.substring(1));
+    const accessToken = params.get('access_token');
+
+    if (accessToken || session) {
       navigate('/');
     }
     setIsLoading(false);
@@ -21,7 +25,7 @@ const Auth = () => {
 
   const handleGoogleSignIn = async () => {
     try {
-      const { data, error } = await supabase.auth.signInWithOAuth({
+      const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: window.location.origin,
