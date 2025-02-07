@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -8,12 +9,18 @@ import { AuthProvider } from "@/components/AuthProvider";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
+import { useAuth } from "./components/AuthProvider";
 
 const queryClient = new QueryClient();
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const isAuthenticated = !!localStorage.getItem("sb-tmpjozfsriqsezobfvhh-auth-token");
-  return isAuthenticated ? children : <Navigate to="/auth" />;
+  const { session } = useAuth();
+  
+  if (!session) {
+    return <Navigate to="/auth" />;
+  }
+  
+  return children;
 };
 
 const App = () => (
