@@ -102,8 +102,8 @@ export function useBooks(user: User | null) {
           schema: 'public',
           table: 'books'
         },
-        () => {
-          console.log('Books table changed, refreshing...');
+        (payload) => {
+          console.log('Books table changed:', payload);
           refreshBooks();
         }
       )
@@ -114,8 +114,8 @@ export function useBooks(user: User | null) {
           schema: 'public',
           table: 'book_ratings'
         },
-        () => {
-          console.log('Ratings changed, refreshing...');
+        (payload) => {
+          console.log('Ratings changed:', payload);
           refreshBooks();
         }
       )
@@ -126,8 +126,8 @@ export function useBooks(user: User | null) {
           schema: 'public',
           table: 'book_reactions'
         },
-        () => {
-          console.log('Reactions changed, refreshing...');
+        (payload) => {
+          console.log('Reactions changed:', payload);
           refreshBooks();
         }
       )
@@ -138,8 +138,8 @@ export function useBooks(user: User | null) {
           schema: 'public',
           table: 'loans'
         },
-        () => {
-          console.log('Loans changed, refreshing...');
+        (payload) => {
+          console.log('Loans changed:', payload);
           refreshBooks();
         }
       )

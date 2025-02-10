@@ -26,7 +26,7 @@ export function BookReactions({ userReactions = [], reactions = {}, onReaction }
           aria-label={`${userReactions.includes(name) ? 'Remove' : 'Add'} ${name} reaction`}
         >
           <span className="text-xl">{emoji}</span>
-          {reactions[name] > 0 && (
+          {(reactions[name] ?? 0) > 0 && (
             <span className="text-sm font-medium">{reactions[name]}</span>
           )}
         </button>
