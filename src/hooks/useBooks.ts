@@ -4,57 +4,21 @@ import { Book } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { User } from "@supabase/supabase-js";
+import { 
+  fetchBooks, 
+  addBookToLibrary, 
+  lendBookToUser, 
+  returnBookToLibrary 
+} from "@/services/bookService";
 
 export function useBooks(user: User | null) {
   const [books, setBooks] = useState<Book[]>([]);
   const { toast } = useToast();
 
-  const fetchBooks = async () => {
+  const refreshBooks = async () => {
     try {
-      const { data: booksData, error: booksError } = await supabase
-        .from('books')
-        .select(`
-          id,
-          title,
-          author,
-          image_url,
-          average_rating,
-          ai_summary,
-          location,
-          loans (
-            lent_to,
-            returned_at
-          ),
-          book_ratings (
-            rating
-          ),
-          book_reactions (
-            reaction
-          )
-        `);
-
-      if (booksError) throw booksError;
-
-      let userRatings = null;
-      let userReactions = null;
-
-      if (user) {
-        const { data: ratings } = await supabase
-          .from('book_ratings')
-          .select('book_id, rating')
-          .eq('user_id', user.id);
-        
-        const { data: reactions } = await supabase
-          .from('book_reactions')
-          .select('book_id, reaction')
-          .eq('user_id', user.id);
-
-        userRatings = ratings;
-        userReactions = reactions;
-      }
-
-      const formattedBooks: Book[] = booksData.map(book => formatBookData(book, userRatings, userReactions));
-      setBooks(formattedBooks);
+      const booksData = await fetchBooks(user?.id);
+      setBooks(booksData);
     } catch (error) {
       console.error('Error fetching books:', error);
       toast({
@@ -65,64 +29,9 @@ export function useBooks(user: User | null) {
     }
   };
 
-  const formatBookData = (
-    book: any, 
-    userRatings: any[] | null, 
-    userReactions: any[] | null
-  ): Book => {
-    const reactionCounts: { [key: string]: number } = {};
-    book.book_reactions?.forEach((r: { reaction: string }) => {
-      reactionCounts[r.reaction] = (reactionCounts[r.reaction] || 0) + 1;
-    });
-
-    const userRating = userRatings?.find(r => r.book_id === book.id)?.rating;
-
-    const bookUserReactions = userReactions
-      ?.filter(r => r.book_id === book.id)
-      .map(r => r.reaction);
-
-    return {
-      id: book.id,
-      title: book.title,
-      author: book.author,
-      imageUrl: book.image_url,
-      lentTo: book.loans && book.loans.length > 0 && !book.loans[0].returned_at
-        ? book.loans[0].lent_to
-        : null,
-      averageRating: book.average_rating,
-      aiSummary: book.ai_summary,
-      userRating,
-      reactions: reactionCounts,
-      userReactions: bookUserReactions || [],
-      location: book.location || 'Oslo 🇧🇻',
-    };
-  };
-
   const addBook = async (title: string, author: string, imageUrl: string) => {
     try {
-      const { data, error } = await supabase
-        .from('books')
-        .insert([
-          { title, author, image_url: imageUrl || undefined }
-        ])
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      const newBook: Book = {
-        id: data.id,
-        title: data.title,
-        author: data.author,
-        imageUrl: data.image_url,
-        lentTo: null,
-        averageRating: null,
-        aiSummary: null,
-        reactions: {},
-        userReactions: [],
-        location: data.location || 'Oslo 🇧🇻',
-      };
-
+      const newBook = await addBookToLibrary(title, author, imageUrl);
       setBooks([...books, newBook]);
       toast({
         title: "Success",
@@ -140,14 +49,7 @@ export function useBooks(user: User | null) {
 
   const lendBook = async (id: number, borrowerName: string) => {
     try {
-      const { error } = await supabase
-        .from('loans')
-        .insert([
-          { book_id: id, lent_to: borrowerName }
-        ]);
-
-      if (error) throw error;
-
+      await lendBookToUser(id, borrowerName);
       setBooks(books.map(book =>
         book.id === id ? { ...book, lentTo: borrowerName } : book
       ));
@@ -168,14 +70,7 @@ export function useBooks(user: User | null) {
 
   const returnBook = async (id: number) => {
     try {
-      const { error } = await supabase
-        .from('loans')
-        .update({ returned_at: new Date().toISOString() })
-        .eq('book_id', id)
-        .is('returned_at', null);
-
-      if (error) throw error;
-
+      await returnBookToLibrary(id);
       setBooks(books.map(book =>
         book.id === id ? { ...book, lentTo: null } : book
       ));
@@ -195,7 +90,7 @@ export function useBooks(user: User | null) {
   };
 
   useEffect(() => {
-    fetchBooks();
+    refreshBooks();
 
     // Subscribe to real-time changes
     const channel = supabase
@@ -209,7 +104,7 @@ export function useBooks(user: User | null) {
         },
         () => {
           console.log('Books table changed, refreshing...');
-          fetchBooks();
+          refreshBooks();
         }
       )
       .on(
@@ -221,7 +116,7 @@ export function useBooks(user: User | null) {
         },
         () => {
           console.log('Ratings changed, refreshing...');
-          fetchBooks();
+          refreshBooks();
         }
       )
       .on(
@@ -233,7 +128,7 @@ export function useBooks(user: User | null) {
         },
         () => {
           console.log('Reactions changed, refreshing...');
-          fetchBooks();
+          refreshBooks();
         }
       )
       .on(
@@ -245,7 +140,7 @@ export function useBooks(user: User | null) {
         },
         () => {
           console.log('Loans changed, refreshing...');
-          fetchBooks();
+          refreshBooks();
         }
       )
       .subscribe();
@@ -257,4 +152,3 @@ export function useBooks(user: User | null) {
 
   return { books, addBook, lendBook, returnBook };
 }
-
