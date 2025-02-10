@@ -1,7 +1,6 @@
 
 import { Book } from "@/types";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -13,6 +12,9 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useState } from "react";
+import { useAuth } from "@/components/AuthProvider";
+import { useToast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface BookLendingControlsProps {
   book: Book;
@@ -24,14 +26,42 @@ interface BookLendingControlsProps {
 export function BookLendingControls({ book, onLend, onReturn, onClose }: BookLendingControlsProps) {
   const [showReturnDialog, setShowReturnDialog] = useState(false);
   const [showLendDialog, setShowLendDialog] = useState(false);
-  const [borrowerName, setBorrowerName] = useState("");
+  const { user } = useAuth();
+  const { toast } = useToast();
 
-  const handleLendSubmit = () => {
-    if (borrowerName.trim()) {
-      onLend(book.id, borrowerName);
-      setShowLendDialog(false);
-      setBorrowerName("");
-      onClose();
+  const handleLendSubmit = async () => {
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to lend books",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      // Get user's profile information
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', user.id)
+        .single();
+
+      if (profileError) throw profileError;
+
+      const borrowerName = profile?.full_name || user.email;
+      if (borrowerName) {
+        onLend(book.id, borrowerName);
+        setShowLendDialog(false);
+        onClose();
+      }
+    } catch (error) {
+      console.error('Error getting user profile:', error);
+      toast({
+        title: "Error",
+        description: "Failed to process lending request. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -71,24 +101,12 @@ export function BookLendingControls({ book, onLend, onReturn, onClose }: BookLen
           <AlertDialogHeader>
             <AlertDialogTitle>Lend Book</AlertDialogTitle>
             <AlertDialogDescription>
-              Enter the name of the person borrowing "{book.title}"
+              Are you sure you want to lend "{book.title}"?
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <div className="grid gap-4 py-4">
-            <Input
-              placeholder="Borrower's name"
-              value={borrowerName}
-              onChange={(e) => setBorrowerName(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && borrowerName.trim()) {
-                  handleLendSubmit();
-                }
-              }}
-            />
-          </div>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setBorrowerName("")}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleLendSubmit} disabled={!borrowerName.trim()}>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleLendSubmit}>
               Confirm Loan
             </AlertDialogAction>
           </AlertDialogFooter>
