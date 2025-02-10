@@ -176,7 +176,11 @@ export function BookDetailView({ book, onLend, onReturn, onClose }: BookDetailVi
       />
 
       <BookImageSection book={book} />
-      <BookReactions userReactions={book.userReactions} onReaction={handleReaction} />
+      <BookReactions 
+        userReactions={book.userReactions} 
+        reactions={book.reactions}
+        onReaction={handleReaction} 
+      />
       
       <div>
         <BookComments 
