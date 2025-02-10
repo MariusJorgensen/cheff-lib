@@ -134,6 +134,7 @@ export type Database = {
           created_at: string | null
           id: number
           image_url: string | null
+          location: Database["public"]["Enums"]["book_location"] | null
           title: string
           updated_at: string | null
         }
@@ -144,6 +145,7 @@ export type Database = {
           created_at?: string | null
           id?: never
           image_url?: string | null
+          location?: Database["public"]["Enums"]["book_location"] | null
           title: string
           updated_at?: string | null
         }
@@ -154,6 +156,7 @@ export type Database = {
           created_at?: string | null
           id?: never
           image_url?: string | null
+          location?: Database["public"]["Enums"]["book_location"] | null
           title?: string
           updated_at?: string | null
         }
@@ -235,7 +238,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      book_location: "Stockholm 🇸🇪" | "Oslo 🇧🇻"
     }
     CompositeTypes: {
       [_ in never]: never
