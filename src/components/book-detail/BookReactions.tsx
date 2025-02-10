@@ -20,8 +20,8 @@ export function BookReactions({ userReactions = [], reactions = {}, onReaction }
         <button
           key={name}
           onClick={() => onReaction(name)}
-          className={`flex items-center gap-1 px-2 py-1 rounded-full transition-all hover:bg-accent ${
-            userReactions.includes(name) ? 'opacity-100' : 'opacity-50'
+          className={`flex items-center gap-1 px-2 py-1 rounded-full transition-all ${
+            userReactions.includes(name) ? 'bg-accent opacity-100' : 'hover:bg-accent opacity-50'
           }`}
           aria-label={`${userReactions.includes(name) ? 'Remove' : 'Add'} ${name} reaction`}
         >
