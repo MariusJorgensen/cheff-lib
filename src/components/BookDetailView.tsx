@@ -8,6 +8,8 @@ import { BookImageSection } from "./book-detail/BookImageSection";
 import { BookReactions } from "./book-detail/BookReactions";
 import { BookComments } from "./book-detail/BookComments";
 import { BookLendingControls } from "./book-detail/BookLendingControls";
+import { Button } from "./ui/button";
+import { MapPin } from "lucide-react";
 
 interface BookDetailViewProps {
   book: Book;
@@ -19,6 +21,7 @@ interface BookDetailViewProps {
 export function BookDetailView({ book, onLend, onReturn, onClose }: BookDetailViewProps) {
   const [comments, setComments] = useState<Comment[]>([]);
   const [isLoadingComments, setIsLoadingComments] = useState(false);
+  const [visibleComments, setVisibleComments] = useState(2);
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -100,19 +103,17 @@ export function BookDetailView({ book, onLend, onReturn, onClose }: BookDetailVi
     if (!user) return;
     
     try {
-      // First check if the reaction already exists
       const { data: existingReaction, error: fetchError } = await supabase
         .from('book_reactions')
         .select('id')
         .eq('book_id', book.id)
         .eq('user_id', user.id)
         .eq('reaction', reactionName)
-        .maybeSingle();  // Changed from .single() to .maybeSingle()
+        .maybeSingle();
 
       if (fetchError) throw fetchError;
 
       if (existingReaction) {
-        // If reaction exists, delete it
         const { error: deleteError } = await supabase
           .from('book_reactions')
           .delete()
@@ -125,7 +126,6 @@ export function BookDetailView({ book, onLend, onReturn, onClose }: BookDetailVi
           description: "Reaction removed!",
         });
       } else {
-        // If reaction doesn't exist, add it
         const { error: insertError } = await supabase
           .from('book_reactions')
           .insert([
@@ -157,21 +157,43 @@ export function BookDetailView({ book, onLend, onReturn, onClose }: BookDetailVi
     fetchComments();
   }, []);
 
+  const showMoreComments = () => {
+    setVisibleComments(prev => prev + 5);
+  };
+
   return (
     <div className="space-y-6">
-      <BookImageSection book={book} />
-      <BookReactions userReactions={book.userReactions} onReaction={handleReaction} />
-      <BookComments 
-        comments={comments}
-        isLoading={isLoadingComments}
-        onAddComment={handleAddComment}
-      />
+      <div className="flex items-center gap-2 text-muted-foreground mb-4">
+        <MapPin className="h-4 w-4" />
+        <span>{book.location}</span>
+      </div>
+
       <BookLendingControls
         book={book}
         onLend={onLend}
         onReturn={onReturn}
         onClose={onClose}
       />
+
+      <BookImageSection book={book} />
+      <BookReactions userReactions={book.userReactions} onReaction={handleReaction} />
+      
+      <div>
+        <BookComments 
+          comments={comments.slice(0, visibleComments)}
+          isLoading={isLoadingComments}
+          onAddComment={handleAddComment}
+        />
+        {comments.length > visibleComments && (
+          <Button 
+            variant="outline" 
+            className="mt-4 w-full"
+            onClick={showMoreComments}
+          >
+            Show More Comments
+          </Button>
+        )}
+      </div>
     </div>
   );
 }

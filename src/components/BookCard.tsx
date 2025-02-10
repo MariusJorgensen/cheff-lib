@@ -3,7 +3,7 @@ import { Book } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { BookOpen } from "lucide-react";
+import { BookOpen, MapPin } from "lucide-react";
 import { useState } from "react";
 import { BookDetailView } from "./BookDetailView";
 
@@ -24,16 +24,14 @@ export function BookCard({ book, onLend, onReturn }: BookCardProps) {
       <Card className="glass-card cursor-pointer transition-transform hover:scale-105">
         <div className="relative">
           <div className="absolute top-2 right-2 z-10">
-            <Badge variant={book.lentTo ? "destructive" : "secondary"} 
-                  className="cursor-pointer"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowDetailDialog(true);
-                  }}>
-              {book.lentTo ? "On Loan" : "Lend Book"}
+            <Badge variant={book.lentTo ? "destructive" : "secondary"}>
+              {book.lentTo ? "On Loan" : "Available"}
             </Badge>
           </div>
-          <div className="h-48 w-full overflow-hidden rounded-t-lg" onClick={() => setShowDetailDialog(true)}>
+          <div 
+            className="h-48 w-full overflow-hidden rounded-t-lg" 
+            onClick={() => setShowDetailDialog(true)}
+          >
             <img
               src={book.imageUrl}
               alt={book.title}
@@ -55,6 +53,11 @@ export function BookCard({ book, onLend, onReturn }: BookCardProps) {
             <div className="flex items-center gap-2 text-muted-foreground">
               <BookOpen className="h-4 w-4" />
               <span>{book.author}</span>
+            </div>
+            
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <MapPin className="h-4 w-4" />
+              <span>{book.location}</span>
             </div>
 
             <div className="text-sm text-muted-foreground">
