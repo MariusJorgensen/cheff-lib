@@ -18,6 +18,7 @@ export const fetchUserRatingsAndReactions = async (userId: string) => {
 };
 
 export const fetchBooks = async (userId: string | undefined = undefined) => {
+  // Fetch books with their active loans (if any)
   const { data: booksData, error: booksError } = await supabase
     .from('books')
     .select(`
