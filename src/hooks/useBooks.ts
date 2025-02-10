@@ -20,6 +20,7 @@ export function useBooks(user: User | null) {
           image_url,
           average_rating,
           ai_summary,
+          location,
           loans (
             lent_to,
             returned_at
@@ -93,6 +94,7 @@ export function useBooks(user: User | null) {
       userRating,
       reactions: reactionCounts,
       userReactions: bookUserReactions || [],
+      location: book.location || 'Oslo 🇧🇻',
     };
   };
 
@@ -117,7 +119,8 @@ export function useBooks(user: User | null) {
         averageRating: null,
         aiSummary: null,
         reactions: {},
-        userReactions: []
+        userReactions: [],
+        location: data.location || 'Oslo 🇧🇻',
       };
 
       setBooks([...books, newBook]);
@@ -254,3 +257,4 @@ export function useBooks(user: User | null) {
 
   return { books, addBook, lendBook, returnBook };
 }
+

@@ -10,6 +10,7 @@ export interface Book {
   userRating?: number | null;
   reactions?: { [key: string]: number };
   userReactions?: string[];
+  location: 'Stockholm 🇸🇪' | 'Oslo 🇧🇻';
 }
 
 export interface Comment {
@@ -21,3 +22,4 @@ export interface Comment {
     email: string;
   };
 }
+
