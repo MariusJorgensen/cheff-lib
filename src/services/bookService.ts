@@ -18,7 +18,6 @@ export const fetchUserRatingsAndReactions = async (userId: string) => {
 };
 
 export const fetchBooks = async (userId: string | undefined = undefined) => {
-  // Updated query to include only active loans (where returned_at is null)
   const { data: booksData, error: booksError } = await supabase
     .from('books')
     .select(`
@@ -29,7 +28,7 @@ export const fetchBooks = async (userId: string | undefined = undefined) => {
       average_rating,
       ai_summary,
       location,
-      loans!inner (
+      loans (
         lent_to,
         returned_at
       ),
@@ -39,8 +38,7 @@ export const fetchBooks = async (userId: string | undefined = undefined) => {
       book_reactions (
         reaction
       )
-    `)
-    .or('loans.returned_at.is.null,loans.id.is.null');
+    `);
 
   if (booksError) throw booksError;
 
