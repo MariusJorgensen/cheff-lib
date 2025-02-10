@@ -5,7 +5,6 @@ import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/components/AuthProvider";
 import { BookImageSection } from "./book-detail/BookImageSection";
-import { BookRating } from "./book-detail/BookRating";
 import { BookReactions } from "./book-detail/BookReactions";
 import { BookComments } from "./book-detail/BookComments";
 import { BookLendingControls } from "./book-detail/BookLendingControls";
@@ -97,46 +96,6 @@ export function BookDetailView({ book, onLend, onReturn, onClose }: BookDetailVi
     }
   };
 
-  const handleRate = async (rating: number) => {
-    if (!user) {
-      toast({
-        title: "Error",
-        description: "You must be logged in to rate books",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      const { error } = await supabase
-        .from('book_ratings')
-        .upsert(
-          {
-            book_id: book.id,
-            user_id: user.id,
-            rating
-          },
-          {
-            onConflict: 'book_id,user_id'
-          }
-        );
-
-      if (error) throw error;
-
-      toast({
-        title: "Success",
-        description: "Rating updated successfully!",
-      });
-    } catch (error) {
-      console.error('Error rating book:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update rating. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
-
   const handleReaction = async (reactionName: string) => {
     if (!user) return;
     
@@ -201,9 +160,6 @@ export function BookDetailView({ book, onLend, onReturn, onClose }: BookDetailVi
   return (
     <div className="space-y-6">
       <BookImageSection book={book} />
-      <div className="p-4 rounded-lg bg-card">
-        <BookRating book={book} onRate={handleRate} />
-      </div>
       <BookReactions userReactions={book.userReactions} onReaction={handleReaction} />
       <BookComments 
         comments={comments}
