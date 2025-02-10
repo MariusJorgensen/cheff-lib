@@ -1,6 +1,7 @@
 
 import { Book } from "@/types";
-import { BookOpen, User } from "lucide-react";
+import { BookOpen, User, Calendar } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
 
 interface BookImageSectionProps {
   book: Book;
@@ -31,9 +32,17 @@ export function BookImageSection({ book }: BookImageSectionProps) {
         )}
 
         {book.lentTo && (
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <User className="h-4 w-4" />
-            <span>Borrowed by: {book.lentTo}</span>
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <User className="h-4 w-4" />
+              <span>Borrowed by: {book.lentTo}</span>
+            </div>
+            {book.loanDate && (
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Calendar className="h-4 w-4" />
+                <span>Borrowed {formatDistanceToNow(new Date(book.loanDate))} ago</span>
+              </div>
+            )}
           </div>
         )}
       </div>

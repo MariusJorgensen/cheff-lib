@@ -11,6 +11,7 @@ export interface Book {
   reactions?: { [key: string]: number };
   userReactions?: string[];
   location: 'Stockholm 🇸🇪' | 'Oslo 🇧🇻';
+  loanDate?: string | null;
 }
 
 export interface Comment {
@@ -22,4 +23,3 @@ export interface Comment {
     email: string;
   };
 }
-

@@ -26,6 +26,7 @@ export const formatBookData = (
     author: book.author,
     imageUrl: book.image_url,
     lentTo: activeLoan ? activeLoan.lent_to : null,
+    loanDate: activeLoan ? activeLoan.created_at : null,
     averageRating: book.average_rating,
     aiSummary: book.ai_summary,
     userRating,
