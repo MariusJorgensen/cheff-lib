@@ -29,7 +29,7 @@ export const fetchBooks = async (userId: string | undefined = undefined) => {
       average_rating,
       ai_summary,
       location,
-      loans (
+      loans!fk_loans_book (
         lent_to,
         returned_at
       ),
