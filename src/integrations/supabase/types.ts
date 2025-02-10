@@ -186,6 +186,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "fk_loans_book"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "loans_book_id_fkey"
             columns: ["book_id"]
             isOneToOne: false

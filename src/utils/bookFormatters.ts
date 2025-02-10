@@ -17,14 +17,15 @@ export const formatBookData = (
     ?.filter(r => r.book_id === book.id)
     .map(r => r.reaction);
 
+  // Find the active loan (where returned_at is null)
+  const activeLoan = book.loans?.find((loan: any) => !loan.returned_at);
+
   return {
     id: book.id,
     title: book.title,
     author: book.author,
     imageUrl: book.image_url,
-    lentTo: book.loans && book.loans.length > 0 && !book.loans[0].returned_at
-      ? book.loans[0].lent_to
-      : null,
+    lentTo: activeLoan ? activeLoan.lent_to : null,
     averageRating: book.average_rating,
     aiSummary: book.ai_summary,
     userRating,
