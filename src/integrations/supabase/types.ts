@@ -165,22 +165,22 @@ export type Database = {
       loans: {
         Row: {
           book_id: number | null
+          created_at: string | null
           id: number
-          lent_at: string | null
           lent_to: string
           returned_at: string | null
         }
         Insert: {
           book_id?: number | null
+          created_at?: string | null
           id?: never
-          lent_at?: string | null
           lent_to: string
           returned_at?: string | null
         }
         Update: {
           book_id?: number | null
+          created_at?: string | null
           id?: never
-          lent_at?: string | null
           lent_to?: string
           returned_at?: string | null
         }
