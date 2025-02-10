@@ -21,7 +21,7 @@ export function BookCard({ book, onLend, onReturn }: BookCardProps) {
 
   return (
     <>
-      <Card className="glass-card cursor-pointer transition-transform hover:scale-105">
+      <Card className="glass-card cursor-pointer transition-transform hover:scale-105 h-[440px] flex flex-col">
         <div className="relative">
           <div className="absolute top-2 right-2 z-10">
             <Badge variant={book.lentTo ? "destructive" : "secondary"}>
@@ -43,28 +43,26 @@ export function BookCard({ book, onLend, onReturn }: BookCardProps) {
             />
           </div>
         </div>
-        <CardHeader>
-          <CardTitle className="flex justify-between items-start">
-            <span>{book.title}</span>
-          </CardTitle>
+        <CardHeader className="flex-none">
+          <CardTitle className="line-clamp-2 min-h-[3.5rem]">{book.title}</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="flex flex-col gap-4">
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <BookOpen className="h-4 w-4" />
-              <span>{book.author}</span>
+        <CardContent className="flex-1 flex flex-col justify-between">
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 text-muted-foreground min-h-[1.5rem]">
+              <BookOpen className="h-4 w-4 flex-shrink-0" />
+              <span className="line-clamp-1">{book.author}</span>
             </div>
             
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <MapPin className="h-4 w-4" />
+            <div className="flex items-center gap-2 text-muted-foreground min-h-[1.5rem]">
+              <MapPin className="h-4 w-4 flex-shrink-0" />
               <span>{book.location}</span>
             </div>
+          </div>
 
-            <div className="text-sm text-muted-foreground">
-              {totalReactions > 0 && (
-                <span>{totalReactions} reaction{totalReactions !== 1 ? 's' : ''}</span>
-              )}
-            </div>
+          <div className="text-sm text-muted-foreground pt-4">
+            {totalReactions > 0 && (
+              <span>{totalReactions} reaction{totalReactions !== 1 ? 's' : ''}</span>
+            )}
           </div>
         </CardContent>
       </Card>
