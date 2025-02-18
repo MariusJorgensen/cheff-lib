@@ -21,13 +21,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isApproved, setIsApproved] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [initializationComplete, setInitializationComplete] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  console.log("AuthProvider rendering, isLoading:", isLoading);
+  console.log("AuthProvider rendering", { isLoading, initializationComplete, session });
 
   const checkApprovalStatus = async (userId: string) => {
-    console.log("Starting checkApprovalStatus");
     try {
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
@@ -52,7 +52,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       setIsAdmin(isAdminUser);
       setIsApproved(approved);
-      console.log("Finished checkApprovalStatus, approved:", approved, "isAdmin:", isAdminUser);
 
       return approved;
     } catch (error) {
@@ -62,9 +61,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
-    console.log("Initial useEffect running");
     let isMounted = true;
-    let timeoutId: number;
 
     const initialize = async () => {
       try {
@@ -73,74 +70,76 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         if (error) {
           console.error("Error getting session:", error);
-          if (isMounted) setIsLoading(false);
+          if (isMounted) {
+            setSession(null);
+            setUser(null);
+          }
           return;
         }
 
-        console.log("Got initial session:", initialSession);
+        if (!isMounted) return;
+
+        setSession(initialSession);
+        setUser(initialSession?.user ?? null);
         
-        if (isMounted) {
-          setSession(initialSession);
-          setUser(initialSession?.user ?? null);
-          
-          if (initialSession?.user) {
-            await checkApprovalStatus(initialSession.user.id);
-          }
-          setIsLoading(false);
+        if (initialSession?.user) {
+          await checkApprovalStatus(initialSession.user.id);
         }
       } catch (error) {
         console.error("Error during initialization:", error);
-        if (isMounted) setIsLoading(false);
+        if (isMounted) {
+          setSession(null);
+          setUser(null);
+        }
+      } finally {
+        if (isMounted) {
+          setInitializationComplete(true);
+          setIsLoading(false);
+        }
       }
     };
-
-    // Set a timeout to prevent infinite loading
-    timeoutId = window.setTimeout(() => {
-      console.log("Loading timeout triggered");
-      if (isMounted && isLoading) {
-        console.error("Loading timed out after 5 seconds");
-        setIsLoading(false);
-      }
-    }, 5000);
 
     initialize();
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (_event, newSession) => {
-      console.log("Auth state changed:", _event, newSession);
+      console.log("Auth state changed", { event: _event, newSession });
       
-      if (isMounted) {
-        setSession(newSession);
-        setUser(newSession?.user ?? null);
-        
-        if (newSession?.user) {
-          await checkApprovalStatus(newSession.user.id);
+      if (!isMounted) return;
+      
+      setSession(newSession);
+      setUser(newSession?.user ?? null);
+      
+      if (newSession?.user) {
+        const approved = await checkApprovalStatus(newSession.user.id);
+        if (!approved) {
+          toast({
+            title: "Account Pending Approval",
+            description: "Your account is pending admin approval. Please check back later.",
+          });
         }
       }
     });
 
     return () => {
-      console.log("Cleanup running");
       isMounted = false;
-      clearTimeout(timeoutId);
       subscription.unsubscribe();
     };
   }, []);
 
   useEffect(() => {
-    console.log("Navigation useEffect running", { isLoading, session, pathname: window.location.pathname });
-    if (!isLoading) {
+    if (!isLoading && initializationComplete) {
       const currentPath = window.location.pathname;
+      console.log("Navigation check", { currentPath, session });
+      
       if (!session && currentPath !== "/auth") {
-        console.log("Navigating to /auth");
         navigate("/auth");
       } else if (session && currentPath === "/auth") {
-        console.log("Navigating to /");
         navigate("/");
       }
     }
-  }, [session, isLoading, navigate]);
+  }, [session, isLoading, initializationComplete, navigate]);
 
   const signOut = async () => {
     try {
@@ -160,8 +159,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  if (isLoading) {
-    console.log("Rendering loading state");
+  if (isLoading || !initializationComplete) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-white"></div>
@@ -169,7 +167,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     );
   }
 
-  console.log("Rendering AuthProvider children");
   return (
     <AuthContext.Provider value={{ session, user, isApproved, isAdmin, signOut }}>
       {children}
