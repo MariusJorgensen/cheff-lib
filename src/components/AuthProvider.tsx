@@ -27,6 +27,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   console.log("AuthProvider rendering", { isLoading, initializationComplete, session });
 
+  const refreshSession = async () => {
+    const { data: { session: freshSession }, error } = await supabase.auth.refreshSession();
+    if (error) {
+      console.error("Error refreshing session:", error);
+      return null;
+    }
+    return freshSession;
+  };
+
   const checkApprovalStatus = async (userId: string) => {
     try {
       const { data: profile, error: profileError } = await supabase
@@ -66,24 +75,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const initialize = async () => {
       try {
         console.log("Starting initialization");
-        const { data: { session: initialSession }, error } = await supabase.auth.getSession();
+        const freshSession = await refreshSession();
         
-        if (error) {
-          console.error("Error getting session:", error);
-          if (isMounted) {
-            setSession(null);
-            setUser(null);
-          }
-          return;
-        }
-
         if (!isMounted) return;
 
-        setSession(initialSession);
-        setUser(initialSession?.user ?? null);
+        setSession(freshSession);
+        setUser(freshSession?.user ?? null);
         
-        if (initialSession?.user) {
-          await checkApprovalStatus(initialSession.user.id);
+        if (freshSession?.user) {
+          await checkApprovalStatus(freshSession.user.id);
         }
       } catch (error) {
         console.error("Error during initialization:", error);
@@ -101,9 +101,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     initialize();
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, newSession) => {
+    // Listen for auth state changes
+    const authSubscription = supabase.auth.onAuthStateChange(async (_event, newSession) => {
       console.log("Auth state changed", { event: _event, newSession });
       
       if (!isMounted) return;
@@ -112,21 +111,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(newSession?.user ?? null);
       
       if (newSession?.user) {
-        const approved = await checkApprovalStatus(newSession.user.id);
-        if (!approved) {
-          toast({
-            title: "Account Pending Approval",
-            description: "Your account is pending admin approval. Please check back later.",
-          });
-        }
+        await checkApprovalStatus(newSession.user.id);
       }
     });
 
+    // Listen for profile changes
+    const profileSubscription = supabase
+      .channel('public:profiles')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'profiles',
+        filter: user ? `id=eq.${user.id}` : undefined
+      }, async (payload) => {
+        console.log('Profile changed:', payload);
+        if (user && payload.new.id === user.id) {
+          // Force session refresh when profile changes
+          const freshSession = await refreshSession();
+          if (freshSession?.user) {
+            await checkApprovalStatus(freshSession.user.id);
+          }
+        }
+      })
+      .subscribe();
+
     return () => {
       isMounted = false;
-      subscription.unsubscribe();
+      authSubscription.data.subscription.unsubscribe();
+      profileSubscription.unsubscribe();
     };
-  }, []);
+  }, [user?.id]);
 
   useEffect(() => {
     if (!isLoading && initializationComplete) {
@@ -143,7 +157,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     try {
-      setIsLoading(true); // Set loading state before sign out
+      setIsLoading(true);
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
       
