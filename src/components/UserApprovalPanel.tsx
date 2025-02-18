@@ -10,6 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { useAuth } from "./AuthProvider";
 
 interface PendingUser {
   id: string;
@@ -21,6 +22,7 @@ interface PendingUser {
 export function UserApprovalPanel() {
   const [pendingUsers, setPendingUsers] = useState<PendingUser[]>([]);
   const { toast } = useToast();
+  const { signOut, user } = useAuth();
 
   const fetchPendingUsers = async () => {
     const { data, error } = await supabase
@@ -39,6 +41,25 @@ export function UserApprovalPanel() {
 
   useEffect(() => {
     fetchPendingUsers();
+
+    // Subscribe to changes in the profiles table
+    const subscription = supabase
+      .channel('profiles-changes')
+      .on('postgres_changes', 
+        { 
+          event: '*', 
+          schema: 'public', 
+          table: 'profiles' 
+        }, 
+        () => {
+          fetchPendingUsers();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const handleApproveUser = async (userId: string) => {
@@ -56,11 +77,21 @@ export function UserApprovalPanel() {
       return;
     }
 
-    toast({
-      title: "Success",
-      description: "User has been approved.",
-    });
+    // If the approved user is the current user, sign them out to refresh their session
+    if (userId === user?.id) {
+      toast({
+        title: "Success",
+        description: "Your account has been approved. Please sign in again.",
+      });
+      await signOut();
+    } else {
+      toast({
+        title: "Success",
+        description: "User has been approved.",
+      });
+    }
 
+    // Refresh the pending users list
     fetchPendingUsers();
   };
 
