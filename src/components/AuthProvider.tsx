@@ -1,6 +1,6 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
-import { Session, User } from "@supabase/supabase-js";
+import { Session, User, RealtimePostgresChangesPayload } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "./ui/use-toast";
@@ -14,19 +14,11 @@ interface AuthContextType {
 }
 
 // Define the payload type for profile changes
-interface ProfileChanges {
-  new: {
-    id: string;
-    is_approved: boolean;
-    [key: string]: any;
-  };
-  old: {
-    id: string;
-    is_approved: boolean;
-    [key: string]: any;
-  } | null;
-  eventType: 'INSERT' | 'UPDATE' | 'DELETE';
-}
+interface ProfileChanges extends RealtimePostgresChangesPayload<{
+  id: string;
+  is_approved: boolean;
+  [key: string]: any;
+}> {}
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -131,23 +123,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     // Listen for profile changes
-    const profileSubscription = supabase
-      .channel('public:profiles')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'profiles',
-        filter: user ? `id=eq.${user.id}` : undefined
-      }, async (payload: ProfileChanges) => {
-        console.log('Profile changed:', payload);
-        if (user && payload.new && payload.new.id === user.id) {
-          // Force session refresh when profile changes
-          const freshSession = await refreshSession();
-          if (freshSession?.user) {
-            await checkApprovalStatus(freshSession.user.id);
+    const profileSubscription = supabase.channel('public:profiles')
+      .on(
+        'postgres_changes' as const,
+        {
+          event: '*',
+          schema: 'public',
+          table: 'profiles',
+          filter: user ? `id=eq.${user.id}` : undefined
+        },
+        async (payload: ProfileChanges) => {
+          console.log('Profile changed:', payload);
+          if (user && payload.new && payload.new.id === user.id) {
+            // Force session refresh when profile changes
+            const freshSession = await refreshSession();
+            if (freshSession?.user) {
+              await checkApprovalStatus(freshSession.user.id);
+            }
           }
         }
-      })
+      )
       .subscribe();
 
     return () => {
