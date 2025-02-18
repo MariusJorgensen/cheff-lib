@@ -24,9 +24,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const { toast } = useToast();
 
   const checkApprovalStatus = async (userId: string) => {
+    console.log("Checking approval status for user:", userId);
+    
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('is_approved')
+      .select('*')
       .eq('id', userId)
       .single();
 
@@ -35,12 +37,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return false;
     }
 
-    const { data: adminStatus } = await supabase
+    console.log("Profile data:", profile);
+
+    const { data: adminStatus, error: adminError } = await supabase
       .rpc('is_admin', { user_id: userId });
 
-    setIsAdmin(!!adminStatus);
-    setIsApproved(!!profile?.is_approved);
-    return !!profile?.is_approved;
+    if (adminError) {
+      console.error('Error checking admin status:', adminError);
+    }
+
+    console.log("Admin status:", adminStatus);
+
+    const approved = !!profile?.is_approved;
+    const isAdminUser = !!adminStatus;
+
+    console.log("Setting states - isApproved:", approved, "isAdmin:", isAdminUser);
+    
+    setIsAdmin(isAdminUser);
+    setIsApproved(approved);
+
+    return approved;
   };
 
   useEffect(() => {
@@ -66,6 +82,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       if (session) {
         const approved = await checkApprovalStatus(session.user.id);
+        console.log("Approval check result:", approved);
         if (!approved) {
           toast({
             title: "Account Pending Approval",
