@@ -134,28 +134,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log("Navigation check", { currentPath, session });
       
       if (!session && currentPath !== "/auth") {
-        navigate("/auth");
+        navigate("/auth", { replace: true });
       } else if (session && currentPath === "/auth") {
-        navigate("/");
+        navigate("/", { replace: true });
       }
     }
   }, [session, isLoading, initializationComplete, navigate]);
 
   const signOut = async () => {
     try {
-      await supabase.auth.signOut();
+      setIsLoading(true); // Set loading state before sign out
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      
+      // Clear all state
       setSession(null);
       setUser(null);
       setIsApproved(false);
       setIsAdmin(false);
-      navigate("/auth");
-    } catch (error) {
+      
+      // Force navigation to auth page
+      await navigate("/auth", { replace: true });
+      
+    } catch (error: any) {
       console.error("Error signing out:", error);
       toast({
         title: "Error",
         description: "Failed to sign out. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
