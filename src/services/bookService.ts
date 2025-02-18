@@ -59,7 +59,8 @@ export const fetchBooks = async (userId: string | undefined = undefined) => {
 export const addBookToLibrary = async (
   title: string, 
   author: string, 
-  imageUrl: string
+  imageUrl: string,
+  location: 'Stockholm 🇸🇪' | 'Oslo 🇧🇻'
 ) => {
   const { data, error } = await supabase
     .from('books')
@@ -68,7 +69,7 @@ export const addBookToLibrary = async (
         title, 
         author, 
         image_url: imageUrl || undefined,
-        location: 'Oslo 🇧🇻' // Set default location
+        location
       }
     ])
     .select()
@@ -86,7 +87,7 @@ export const addBookToLibrary = async (
     aiSummary: null,
     reactions: {},
     userReactions: [],
-    location: data.location || 'Oslo 🇧🇻',
+    location: data.location,
   } as Book;
 };
 

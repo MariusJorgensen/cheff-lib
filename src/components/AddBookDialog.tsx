@@ -13,9 +13,16 @@ import { Label } from "@/components/ui/label";
 import { PlusCircle, Search, Loader2 } from "lucide-react";
 import { lookupISBN } from "@/services/isbnService";
 import { useToast } from "@/components/ui/use-toast";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface AddBookDialogProps {
-  onAddBook: (title: string, author: string, imageUrl: string) => void;
+  onAddBook: (title: string, author: string, imageUrl: string, location: 'Stockholm 🇸🇪' | 'Oslo 🇧🇻') => void;
 }
 
 export function AddBookDialog({ onAddBook }: AddBookDialogProps) {
@@ -24,6 +31,7 @@ export function AddBookDialog({ onAddBook }: AddBookDialogProps) {
   const [title, setTitle] = useState("");
   const [author, setAuthor] = useState("");
   const [imageUrl, setImageUrl] = useState("");
+  const [location, setLocation] = useState<'Stockholm 🇸🇪' | 'Oslo 🇧🇻'>('Oslo 🇧🇻');
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
@@ -61,13 +69,14 @@ export function AddBookDialog({ onAddBook }: AddBookDialogProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (title && author) {
-      const finalImageUrl = imageUrl || "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b";
-      onAddBook(title, author, finalImageUrl);
+    if (title && author && location) {
+      const finalImageUrl = imageUrl || "https://placehold.co/400x600?text=No+Cover+Available";
+      onAddBook(title, author, finalImageUrl, location);
       setIsbn("");
       setTitle("");
       setAuthor("");
       setImageUrl("");
+      setLocation('Oslo 🇧🇻');
       setOpen(false);
     }
   };
@@ -137,6 +146,18 @@ export function AddBookDialog({ onAddBook }: AddBookDialogProps) {
               onChange={(e) => setImageUrl(e.target.value)}
               placeholder="Enter image URL"
             />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="location">Location</Label>
+            <Select value={location} onValueChange={(value) => setLocation(value as 'Stockholm 🇸🇪' | 'Oslo 🇧🇻')}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a location" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Oslo 🇧🇻">Oslo 🇧🇻</SelectItem>
+                <SelectItem value="Stockholm 🇸🇪">Stockholm 🇸🇪</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <Button type="submit" className="w-full">
             Add Book
