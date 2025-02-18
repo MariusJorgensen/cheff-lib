@@ -26,6 +26,10 @@ const Index = () => {
     return matchesSearch && matchesFilter;
   });
 
+  const handleAddBook = (title: string, author: string, imageUrl: string, location: 'Stockholm 🇸🇪' | 'Oslo 🇧🇻') => {
+    addBook(title, author, imageUrl, location);
+  };
+
   return (
     <div className="min-h-screen p-8">
       <div className="max-w-6xl mx-auto space-y-8">
@@ -39,7 +43,7 @@ const Index = () => {
           onSearchChange={setSearch}
           filter={filter}
           onFilterChange={setFilter}
-          onAddBook={addBook}
+          onAddBook={handleAddBook}
         />
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
