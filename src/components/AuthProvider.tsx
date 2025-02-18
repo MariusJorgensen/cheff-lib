@@ -1,6 +1,6 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
-import { Session, User, SupabaseRealtimePayload } from "@supabase/supabase-js";
+import { Session, User, RealtimeChannel } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "./ui/use-toast";
@@ -20,7 +20,11 @@ type Profile = {
   [key: string]: any;
 };
 
-type ProfileChanges = SupabaseRealtimePayload<Profile>;
+type ProfileChanges = {
+  new: Profile;
+  old: Profile | null;
+  eventType: 'INSERT' | 'UPDATE' | 'DELETE';
+};
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
