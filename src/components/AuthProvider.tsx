@@ -6,8 +6,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { AuthContext } from "@/contexts/AuthContext";
 import { useAuthState } from "@/hooks/useAuthState";
 import { checkApprovalStatus } from "@/services/approvalService";
-import type { ProfileChanges } from "@/types/auth";
 import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
+
+type Profile = {
+  id: string;
+  is_approved: boolean;
+  [key: string]: any;
+};
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
@@ -84,7 +89,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const channel = supabase.channel('profile-changes');
     
     const profileSubscription = channel
-      .on<{ [key: string]: any }>(
+      .on<Profile>(
         'postgres_changes',
         {
           event: '*',
@@ -92,9 +97,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           table: 'profiles',
           filter: user ? `id=eq.${user.id}` : undefined
         },
-        async (payload: RealtimePostgresChangesPayload<{ [key: string]: any }>) => {
+        async (payload: RealtimePostgresChangesPayload<Profile>) => {
           console.log('Profile changed:', payload);
-          if (user && payload.new && payload.new.id === user.id) {
+          if (user && payload.new && 'id' in payload.new && payload.new.id === user.id) {
             const freshSession = await refreshSession();
             if (freshSession?.user) {
               const { approved, isAdmin: isAdminUser } = await checkApprovalStatus(freshSession.user.id);
