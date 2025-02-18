@@ -20,6 +20,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isApproved, setIsApproved] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -60,19 +61,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log("Initial session:", session);
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (!session) {
-        navigate("/auth");
-      } else {
-        checkApprovalStatus(session.user.id);
+    const initialize = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        console.log("Initial session:", session);
+        
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        if (session?.user) {
+          await checkApprovalStatus(session.user.id);
+        }
+      } catch (error) {
+        console.error("Error during initialization:", error);
+      } finally {
+        setIsLoading(false);
       }
-    });
+    };
 
-    // Listen for auth changes
+    initialize();
+
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (_event, session) => {
@@ -80,7 +88,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSession(session);
       setUser(session?.user ?? null);
       
-      if (session) {
+      if (session?.user) {
         const approved = await checkApprovalStatus(session.user.id);
         console.log("Approval check result:", approved);
         if (!approved) {
@@ -89,19 +97,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             description: "Your account is pending admin approval. Please check back later.",
           });
         }
-        navigate("/");
-      } else {
-        navigate("/auth");
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate]);
+  }, []);
+
+  useEffect(() => {
+    if (!isLoading) {
+      if (!session) {
+        navigate("/auth");
+      } else if (window.location.pathname === "/auth") {
+        navigate("/");
+      }
+    }
+  }, [session, isLoading, navigate]);
 
   const signOut = async () => {
     await supabase.auth.signOut();
+    setSession(null);
+    setUser(null);
+    setIsApproved(false);
+    setIsAdmin(false);
     navigate("/auth");
   };
+
+  if (isLoading) {
+    return null; // or a loading spinner
+  }
 
   return (
     <AuthContext.Provider value={{ session, user, isApproved, isAdmin, signOut }}>
