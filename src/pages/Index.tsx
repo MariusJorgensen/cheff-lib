@@ -14,12 +14,6 @@ const Index = () => {
   const { books, addBook, lendBook, returnBook } = useBooks(user);
 
   const filteredBooks = books.filter((book) => {
-    // Add debug logging
-    if (filter === "my-loans") {
-      console.log("Book lentTo:", book.lentTo);
-      console.log("User email:", user?.email);
-    }
-
     const matchesSearch = book.title.toLowerCase().includes(search.toLowerCase()) ||
                          book.author.toLowerCase().includes(search.toLowerCase());
     
