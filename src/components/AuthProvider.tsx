@@ -25,57 +25,74 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const { toast } = useToast();
 
   const checkApprovalStatus = async (userId: string) => {
-    console.log("Checking approval status for user:", userId);
-    
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .single();
+    try {
+      console.log("Checking approval status for user:", userId);
+      
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
 
-    if (profileError) {
-      console.error('Error fetching approval status:', profileError);
+      if (profileError) {
+        console.error('Error fetching approval status:', profileError);
+        return false;
+      }
+
+      console.log("Profile data:", profile);
+
+      const { data: adminStatus, error: adminError } = await supabase
+        .rpc('is_admin', { user_id: userId });
+
+      if (adminError) {
+        console.error('Error checking admin status:', adminError);
+      }
+
+      console.log("Admin status:", adminStatus);
+
+      const approved = !!profile?.is_approved;
+      const isAdminUser = !!adminStatus;
+
+      console.log("Setting states - isApproved:", approved, "isAdmin:", isAdminUser);
+      
+      setIsAdmin(isAdminUser);
+      setIsApproved(approved);
+
+      return approved;
+    } catch (error) {
+      console.error('Error in checkApprovalStatus:', error);
       return false;
     }
-
-    console.log("Profile data:", profile);
-
-    const { data: adminStatus, error: adminError } = await supabase
-      .rpc('is_admin', { user_id: userId });
-
-    if (adminError) {
-      console.error('Error checking admin status:', adminError);
-    }
-
-    console.log("Admin status:", adminStatus);
-
-    const approved = !!profile?.is_approved;
-    const isAdminUser = !!adminStatus;
-
-    console.log("Setting states - isApproved:", approved, "isAdmin:", isAdminUser);
-    
-    setIsAdmin(isAdminUser);
-    setIsApproved(approved);
-
-    return approved;
   };
 
   useEffect(() => {
+    let isMounted = true;
+
     const initialize = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        console.log("Initial session:", session);
+        const { data: { session: initialSession }, error } = await supabase.auth.getSession();
         
-        setSession(session);
-        setUser(session?.user ?? null);
+        if (error) {
+          console.error("Error getting session:", error);
+          return;
+        }
+
+        console.log("Initial session:", initialSession);
         
-        if (session?.user) {
-          await checkApprovalStatus(session.user.id);
+        if (isMounted) {
+          setSession(initialSession);
+          setUser(initialSession?.user ?? null);
+          
+          if (initialSession?.user) {
+            await checkApprovalStatus(initialSession.user.id);
+          }
         }
       } catch (error) {
         console.error("Error during initialization:", error);
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     };
 
@@ -83,43 +100,59 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      console.log("Auth state changed:", _event, session);
-      setSession(session);
-      setUser(session?.user ?? null);
+    } = supabase.auth.onAuthStateChange(async (_event, newSession) => {
+      console.log("Auth state changed:", _event, newSession);
       
-      if (session?.user) {
-        const approved = await checkApprovalStatus(session.user.id);
-        console.log("Approval check result:", approved);
-        if (!approved) {
-          toast({
-            title: "Account Pending Approval",
-            description: "Your account is pending admin approval. Please check back later.",
-          });
+      if (isMounted) {
+        setSession(newSession);
+        setUser(newSession?.user ?? null);
+        
+        if (newSession?.user) {
+          const approved = await checkApprovalStatus(newSession.user.id);
+          console.log("Approval check result:", approved);
+          if (!approved) {
+            toast({
+              title: "Account Pending Approval",
+              description: "Your account is pending admin approval. Please check back later.",
+            });
+          }
         }
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   useEffect(() => {
     if (!isLoading) {
-      if (!session) {
+      const currentPath = window.location.pathname;
+      if (!session && currentPath !== "/auth") {
         navigate("/auth");
-      } else if (window.location.pathname === "/auth") {
+      } else if (session && currentPath === "/auth") {
         navigate("/");
       }
     }
   }, [session, isLoading, navigate]);
 
   const signOut = async () => {
-    await supabase.auth.signOut();
-    setSession(null);
-    setUser(null);
-    setIsApproved(false);
-    setIsAdmin(false);
-    navigate("/auth");
+    try {
+      await supabase.auth.signOut();
+      setSession(null);
+      setUser(null);
+      setIsApproved(false);
+      setIsAdmin(false);
+      navigate("/auth");
+    } catch (error) {
+      console.error("Error signing out:", error);
+      toast({
+        title: "Error",
+        description: "Failed to sign out. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   if (isLoading) {
