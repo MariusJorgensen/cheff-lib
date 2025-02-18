@@ -6,11 +6,13 @@ import { useAuth } from "@/components/AuthProvider";
 import { useBooks } from "@/hooks/useBooks";
 import { LibraryHeader } from "@/components/LibraryHeader";
 import { LibraryControls } from "@/components/LibraryControls";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { UserApprovalPanel } from "@/components/UserApprovalPanel";
 
 const Index = () => {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
-  const { user, signOut } = useAuth();
+  const { user, signOut, isApproved, isAdmin } = useAuth();
   const { books, addBook, lendBook, returnBook } = useBooks(user);
 
   const filteredBooks = books.filter((book) => {
@@ -30,6 +32,21 @@ const Index = () => {
     addBook(title, author, imageUrl, location);
   };
 
+  if (!isApproved && !isAdmin) {
+    return (
+      <div className="min-h-screen p-8">
+        <div className="max-w-6xl mx-auto space-y-8">
+          <LibraryHeader userEmail={user?.email} onSignOut={signOut} />
+          <Alert>
+            <AlertDescription>
+              Your account is pending admin approval. Please check back later.
+            </AlertDescription>
+          </Alert>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen p-8">
       <div className="max-w-6xl mx-auto space-y-8">
@@ -38,6 +55,8 @@ const Index = () => {
           onSignOut={signOut}
         />
         
+        {isAdmin && <UserApprovalPanel />}
+
         <LibraryControls
           search={search}
           onSearchChange={setSearch}

@@ -9,6 +9,21 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      admin_users: {
+        Row: {
+          created_at: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+        }
+        Relationships: []
+      }
       app_feedback: {
         Row: {
           created_at: string
@@ -224,6 +239,7 @@ export type Database = {
           full_name: string | null
           google_id: string | null
           id: string
+          is_approved: boolean | null
           picture_url: string | null
           updated_at: string
         }
@@ -235,6 +251,7 @@ export type Database = {
           full_name?: string | null
           google_id?: string | null
           id: string
+          is_approved?: boolean | null
           picture_url?: string | null
           updated_at?: string
         }
@@ -246,6 +263,7 @@ export type Database = {
           full_name?: string | null
           google_id?: string | null
           id?: string
+          is_approved?: boolean | null
           picture_url?: string | null
           updated_at?: string
         }
@@ -256,7 +274,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_admin: {
+        Args: {
+          user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
       book_location: "Stockholm 🇸🇪" | "Oslo 🇧🇻"
