@@ -60,11 +60,11 @@ export function FeedbackDialog() {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button 
-          variant="ghost" 
-          size="icon"
+          variant="outline"
           className="hover:bg-[#F5F3E1] dark:hover:bg-[#0A1840]/20"
         >
           <MessageSquarePlus className="h-5 w-5" />
+          Share Feedback
         </Button>
       </DialogTrigger>
       <DialogContent>
