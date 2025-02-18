@@ -1,86 +1,33 @@
 
-import { createContext, useContext, useEffect, useState } from "react";
-import { Session, User, RealtimeChannel } from "@supabase/supabase-js";
-import { supabase } from "@/integrations/supabase/client";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "./ui/use-toast";
-
-interface AuthContextType {
-  session: Session | null;
-  user: User | null;
-  isApproved: boolean;
-  isAdmin: boolean;
-  signOut: () => Promise<void>;
-}
-
-// Define the payload type for profile changes
-type Profile = {
-  id: string;
-  is_approved: boolean;
-  [key: string]: any;
-};
-
-type ProfileChanges = {
-  new: Profile;
-  old: Profile | null;
-  eventType: 'INSERT' | 'UPDATE' | 'DELETE';
-};
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+import { supabase } from "@/integrations/supabase/client";
+import { AuthContext } from "@/contexts/AuthContext";
+import { useAuthState } from "@/hooks/useAuthState";
+import { checkApprovalStatus } from "@/services/approvalService";
+import type { ProfileChanges } from "@/types/auth";
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [session, setSession] = useState<Session | null>(null);
-  const [user, setUser] = useState<User | null>(null);
-  const [isApproved, setIsApproved] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [initializationComplete, setInitializationComplete] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const {
+    session,
+    setSession,
+    user,
+    setUser,
+    isApproved,
+    setIsApproved,
+    isAdmin,
+    setIsAdmin,
+    isLoading,
+    setIsLoading,
+    initializationComplete,
+    setInitializationComplete,
+    refreshSession,
+  } = useAuthState();
 
   console.log("AuthProvider rendering", { isLoading, initializationComplete, session });
-
-  const refreshSession = async () => {
-    const { data: { session: freshSession }, error } = await supabase.auth.refreshSession();
-    if (error) {
-      console.error("Error refreshing session:", error);
-      return null;
-    }
-    return freshSession;
-  };
-
-  const checkApprovalStatus = async (userId: string) => {
-    try {
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-
-      if (profileError) {
-        console.error('Error fetching approval status:', profileError);
-        return false;
-      }
-
-      const { data: adminStatus, error: adminError } = await supabase
-        .rpc('is_admin', { user_id: userId });
-
-      if (adminError) {
-        console.error('Error checking admin status:', adminError);
-      }
-
-      const approved = !!profile?.is_approved;
-      const isAdminUser = !!adminStatus;
-      
-      setIsAdmin(isAdminUser);
-      setIsApproved(approved);
-
-      return approved;
-    } catch (error) {
-      console.error('Error in checkApprovalStatus:', error);
-      return false;
-    }
-  };
 
   useEffect(() => {
     let isMounted = true;
@@ -96,7 +43,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(freshSession?.user ?? null);
         
         if (freshSession?.user) {
-          await checkApprovalStatus(freshSession.user.id);
+          const { approved, isAdmin: isAdminUser } = await checkApprovalStatus(freshSession.user.id);
+          setIsApproved(approved);
+          setIsAdmin(isAdminUser);
         }
       } catch (error) {
         console.error("Error during initialization:", error);
@@ -124,7 +73,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(newSession?.user ?? null);
       
       if (newSession?.user) {
-        await checkApprovalStatus(newSession.user.id);
+        const { approved, isAdmin: isAdminUser } = await checkApprovalStatus(newSession.user.id);
+        setIsApproved(approved);
+        setIsAdmin(isAdminUser);
       }
     });
 
@@ -139,15 +90,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           table: 'profiles',
           filter: user ? `id=eq.${user.id}` : undefined
         },
-        (payload: ProfileChanges) => {
+        async (payload: ProfileChanges) => {
           console.log('Profile changed:', payload);
           if (user && payload.new && payload.new.id === user.id) {
-            // Force session refresh when profile changes
-            refreshSession().then(freshSession => {
-              if (freshSession?.user) {
-                checkApprovalStatus(freshSession.user.id);
-              }
-            });
+            const freshSession = await refreshSession();
+            if (freshSession?.user) {
+              const { approved, isAdmin: isAdminUser } = await checkApprovalStatus(freshSession.user.id);
+              setIsApproved(approved);
+              setIsAdmin(isAdminUser);
+            }
           }
         }
       )
@@ -215,10 +166,4 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider");
-  }
-  return context;
-};
+export { useAuth } from './useAuth';
