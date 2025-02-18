@@ -5,6 +5,7 @@ interface OpenLibraryResponse {
   title: string;
   authors?: { name: string }[];
   cover_i?: number;
+  covers?: number[];
 }
 
 export const lookupISBN = async (isbn: string): Promise<{
@@ -26,9 +27,11 @@ export const lookupISBN = async (isbn: string): Promise<{
       return null;
     }
 
-    const coverUrl = bookData.cover_i 
-      ? `https://covers.openlibrary.org/b/id/${bookData.cover_i}-L.jpg`
-      : 'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b';
+    // Try to get the cover from covers array first, then fallback to cover_i
+    const coverId = bookData.covers?.[0] || bookData.cover_i;
+    const coverUrl = coverId
+      ? `https://covers.openlibrary.org/b/id/${coverId}-L.jpg`
+      : 'https://placehold.co/400x600?text=No+Cover+Available';
 
     return {
       title: bookData.title,

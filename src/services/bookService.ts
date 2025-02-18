@@ -64,7 +64,12 @@ export const addBookToLibrary = async (
   const { data, error } = await supabase
     .from('books')
     .insert([
-      { title, author, image_url: imageUrl || undefined }
+      { 
+        title, 
+        author, 
+        image_url: imageUrl || undefined,
+        location: 'Oslo 🇧🇻' // Set default location
+      }
     ])
     .select()
     .single();
