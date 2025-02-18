@@ -13,6 +13,21 @@ interface AuthContextType {
   signOut: () => Promise<void>;
 }
 
+// Define the payload type for profile changes
+interface ProfileChanges {
+  new: {
+    id: string;
+    is_approved: boolean;
+    [key: string]: any;
+  };
+  old: {
+    id: string;
+    is_approved: boolean;
+    [key: string]: any;
+  } | null;
+  eventType: 'INSERT' | 'UPDATE' | 'DELETE';
+}
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -123,9 +138,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         schema: 'public',
         table: 'profiles',
         filter: user ? `id=eq.${user.id}` : undefined
-      }, async (payload) => {
+      }, async (payload: ProfileChanges) => {
         console.log('Profile changed:', payload);
-        if (user && payload.new.id === user.id) {
+        if (user && payload.new && payload.new.id === user.id) {
           // Force session refresh when profile changes
           const freshSession = await refreshSession();
           if (freshSession?.user) {
