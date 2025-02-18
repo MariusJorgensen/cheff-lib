@@ -44,6 +44,7 @@ export function LibraryControls({
           <SelectItem value="all">All Books</SelectItem>
           <SelectItem value="available">Available</SelectItem>
           <SelectItem value="borrowed">On Loan</SelectItem>
+          <SelectItem value="my-loans">My Borrowed Books</SelectItem>
         </SelectContent>
       </Select>
       <AddBookDialog onAddBook={onAddBook} />

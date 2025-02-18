@@ -16,9 +16,13 @@ const Index = () => {
   const filteredBooks = books.filter((book) => {
     const matchesSearch = book.title.toLowerCase().includes(search.toLowerCase()) ||
                          book.author.toLowerCase().includes(search.toLowerCase());
-    const matchesFilter = filter === "all" ||
-                         (filter === "available" && !book.lentTo) ||
-                         (filter === "borrowed" && book.lentTo);
+    
+    const matchesFilter = 
+      filter === "all" ||
+      (filter === "available" && !book.lentTo) ||
+      (filter === "borrowed" && book.lentTo) ||
+      (filter === "my-loans" && book.lentTo === user?.email);
+
     return matchesSearch && matchesFilter;
   });
 
@@ -59,4 +63,3 @@ const Index = () => {
 };
 
 export default Index;
-
