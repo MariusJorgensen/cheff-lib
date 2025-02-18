@@ -1,6 +1,6 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
-import { Session, User } from "@supabase/supabase-js";
+import { Session, User, SupabaseRealtimePayload } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "./ui/use-toast";
@@ -14,19 +14,13 @@ interface AuthContextType {
 }
 
 // Define the payload type for profile changes
-type ProfileChanges = {
-  new: {
-    id: string;
-    is_approved: boolean;
-    [key: string]: any;
-  };
-  old: {
-    id: string;
-    is_approved: boolean;
-    [key: string]: any;
-  } | null;
-  eventType: 'INSERT' | 'UPDATE' | 'DELETE';
+type Profile = {
+  id: string;
+  is_approved: boolean;
+  [key: string]: any;
 };
+
+type ProfileChanges = SupabaseRealtimePayload<Profile>;
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -131,9 +125,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     // Listen for profile changes
-    const profileSubscription = supabase.channel('public:profiles')
+    const channel = supabase.channel('public:profiles');
+    const profileSubscription = channel
       .on(
-        'postgres_changes' as const,
+        'postgres_changes',
         {
           event: '*',
           schema: 'public',
