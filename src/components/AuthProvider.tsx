@@ -1,3 +1,4 @@
+
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "./ui/use-toast";
@@ -48,26 +49,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return;
         }
 
-        setSession(freshSession);
-        setUser(freshSession?.user ?? null);
-        
         if (freshSession?.user) {
+          console.log("Setting session and user from fresh session");
+          setSession(freshSession);
+          setUser(freshSession.user);
+          
           console.log("Checking approval status for user:", freshSession.user.id);
           const { approved, isAdmin: isAdminUser } = await checkApprovalStatus(freshSession.user.id);
           console.log("Approval status received:", { approved, isAdminUser });
+          
           if (isMounted) {
             setIsApproved(approved);
             setIsAdmin(isAdminUser);
           }
         } else {
-          console.log("No user in fresh session");
-          if (isMounted) {
-            setIsApproved(false);
-            setIsAdmin(false);
-          }
+          console.log("No user in fresh session, clearing state");
+          setSession(null);
+          setUser(null);
+          setIsApproved(false);
+          setIsAdmin(false);
         }
       } catch (error) {
         console.error("Error during initialization:", error);
+        toast({
+          title: "Error",
+          description: "Failed to initialize session. Please try logging in again.",
+          variant: "destructive",
+        });
         if (isMounted) {
           setSession(null);
           setUser(null);
@@ -86,7 +94,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     console.log("Setting up auth subscriptions");
     initialize();
 
-    // Listen for auth state changes
     const authSubscription = supabase.auth.onAuthStateChange(async (_event, newSession) => {
       console.log("Auth state changed", { event: _event, newSession });
       
@@ -95,27 +102,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
       
-      setSession(newSession);
-      setUser(newSession?.user ?? null);
-      
-      if (newSession?.user) {
-        console.log("Checking approval status after auth state change");
-        const { approved, isAdmin: isAdminUser } = await checkApprovalStatus(newSession.user.id);
-        console.log("New approval status:", { approved, isAdminUser });
-        if (isMounted) {
-          setIsApproved(approved);
-          setIsAdmin(isAdminUser);
+      try {
+        if (newSession?.user) {
+          setSession(newSession);
+          setUser(newSession.user);
+          
+          console.log("Checking approval status after auth state change");
+          const { approved, isAdmin: isAdminUser } = await checkApprovalStatus(newSession.user.id);
+          console.log("New approval status:", { approved, isAdminUser });
+          
+          if (isMounted) {
+            setIsApproved(approved);
+            setIsAdmin(isAdminUser);
+            setInitializationComplete(true);
+            setIsLoading(false);
+          }
+        } else {
+          console.log("No user in auth state change");
+          if (isMounted) {
+            setSession(null);
+            setUser(null);
+            setIsApproved(false);
+            setIsAdmin(false);
+          }
         }
-      } else {
-        console.log("No user in auth state change");
-        if (isMounted) {
-          setIsApproved(false);
-          setIsAdmin(false);
-        }
+      } catch (error) {
+        console.error("Error in auth state change:", error);
+        toast({
+          title: "Error",
+          description: "Failed to update session. Please try logging in again.",
+          variant: "destructive",
+        });
       }
     });
 
-    // Listen for profile changes
     const channel = supabase.channel('profile-changes');
     
     const profileSubscription = channel
@@ -129,19 +149,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         },
         async (payload: RealtimePostgresChangesPayload<Profile>) => {
           console.log('Profile changed:', payload);
-          if (!isMounted) {
-            console.log("Component unmounted during profile change");
-            return;
-          }
+          if (!isMounted || !user) return;
           
-          if (user && payload.new && 'id' in payload.new && payload.new.id === user.id) {
-            console.log("Refreshing session after profile change");
-            const freshSession = await refreshSession();
-            if (freshSession?.user && isMounted) {
-              const { approved, isAdmin: isAdminUser } = await checkApprovalStatus(freshSession.user.id);
-              console.log("Updated approval status:", { approved, isAdminUser });
-              setIsApproved(approved);
-              setIsAdmin(isAdminUser);
+          if (payload.new && 'id' in payload.new && payload.new.id === user.id) {
+            try {
+              console.log("Refreshing session after profile change");
+              const freshSession = await refreshSession();
+              if (freshSession?.user && isMounted) {
+                const { approved, isAdmin: isAdminUser } = await checkApprovalStatus(freshSession.user.id);
+                console.log("Updated approval status:", { approved, isAdminUser });
+                setIsApproved(approved);
+                setIsAdmin(isAdminUser);
+              }
+            } catch (error) {
+              console.error("Error refreshing session after profile change:", error);
             }
           }
         }
@@ -162,11 +183,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.log("Spinner timeout reached, forcing completion");
         setIsLoading(false);
         setInitializationComplete(true);
+        // Show error toast if we had to force timeout
+        toast({
+          title: "Session Error",
+          description: "There was an issue loading your session. Please try logging in again.",
+          variant: "destructive",
+        });
       }
     }, 5000); // 5 second timeout
 
     return () => clearTimeout(timeoutId);
-  }, [isLoading, setIsLoading, setInitializationComplete]);
+  }, [isLoading, setIsLoading, setInitializationComplete, toast]);
 
   useEffect(() => {
     if (!isLoading && initializationComplete) {
