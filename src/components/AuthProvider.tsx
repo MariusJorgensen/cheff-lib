@@ -7,6 +7,7 @@ import { AuthContext } from "@/contexts/AuthContext";
 import { useAuthState } from "@/hooks/useAuthState";
 import { checkApprovalStatus } from "@/services/approvalService";
 import type { ProfileChanges } from "@/types/auth";
+import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
@@ -79,10 +80,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     });
 
-    // Listen for profile changes
-    const channel = supabase.channel('public:profiles');
+    // Listen for profile changes using the correct type
+    const channel = supabase.channel('profile-changes');
+    
     const profileSubscription = channel
-      .on(
+      .on<{ [key: string]: any }>(
         'postgres_changes',
         {
           event: '*',
@@ -90,7 +92,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           table: 'profiles',
           filter: user ? `id=eq.${user.id}` : undefined
         },
-        async (payload: ProfileChanges) => {
+        async (payload: RealtimePostgresChangesPayload<{ [key: string]: any }>) => {
           console.log('Profile changed:', payload);
           if (user && payload.new && payload.new.id === user.id) {
             const freshSession = await refreshSession();
@@ -107,7 +109,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => {
       isMounted = false;
       authSubscription.data.subscription.unsubscribe();
-      profileSubscription.unsubscribe();
+      supabase.removeChannel(channel);
     };
   }, [user?.id]);
 
