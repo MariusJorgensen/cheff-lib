@@ -29,9 +29,9 @@ export function useBooks(user: User | null) {
     }
   };
 
-  const addBook = async (title: string, author: string, imageUrl: string) => {
+  const addBook = async (title: string, author: string, imageUrl: string, location: 'Stockholm 🇸🇪' | 'Oslo 🇧🇻') => {
     try {
-      const newBook = await addBookToLibrary(title, author, imageUrl);
+      const newBook = await addBookToLibrary(title, author, imageUrl, location);
       setBooks([...books, newBook]);
       toast({
         title: "Success",

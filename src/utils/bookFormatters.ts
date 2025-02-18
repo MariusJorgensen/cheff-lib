@@ -20,6 +20,9 @@ export const formatBookData = (
   // Find the active loan (where returned_at is null)
   const activeLoan = book.loans?.find((loan: any) => !loan.returned_at);
 
+  // Ensure location is one of the two valid options
+  const location = book.location === 'Stockholm 🇸🇪' ? 'Stockholm 🇸🇪' : 'Oslo 🇧🇻';
+
   return {
     id: book.id,
     title: book.title,
@@ -32,6 +35,6 @@ export const formatBookData = (
     userRating,
     reactions: reactionCounts,
     userReactions: bookUserReactions || [],
-    location: book.location || 'Oslo 🇧🇻',
+    location,
   };
 };
