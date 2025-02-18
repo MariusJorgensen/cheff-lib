@@ -12,12 +12,19 @@ export function useAuthState() {
   const [initializationComplete, setInitializationComplete] = useState(false);
 
   const refreshSession = async () => {
-    const { data: { session: freshSession }, error } = await supabase.auth.refreshSession();
-    if (error) {
-      console.error("Error refreshing session:", error);
+    try {
+      console.log("Refreshing session...");
+      const { data: { session: freshSession }, error } = await supabase.auth.getSession();
+      if (error) {
+        console.error("Error refreshing session:", error);
+        return null;
+      }
+      console.log("Session refresh complete:", freshSession);
+      return freshSession;
+    } catch (error) {
+      console.error("Exception in refreshSession:", error);
       return null;
     }
-    return freshSession;
   };
 
   return {
