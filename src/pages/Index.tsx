@@ -14,6 +14,12 @@ const Index = () => {
   const { books, addBook, lendBook, returnBook } = useBooks(user);
 
   const filteredBooks = books.filter((book) => {
+    // Add debug logging
+    if (filter === "my-loans") {
+      console.log("Book lentTo:", book.lentTo);
+      console.log("User email:", user?.email);
+    }
+
     const matchesSearch = book.title.toLowerCase().includes(search.toLowerCase()) ||
                          book.author.toLowerCase().includes(search.toLowerCase());
     
@@ -21,7 +27,7 @@ const Index = () => {
       filter === "all" ||
       (filter === "available" && !book.lentTo) ||
       (filter === "borrowed" && book.lentTo) ||
-      (filter === "my-loans" && book.lentTo === user?.email);
+      (filter === "my-loans" && book.lentTo?.toLowerCase() === user?.email?.toLowerCase());
 
     return matchesSearch && matchesFilter;
   });
@@ -53,7 +59,9 @@ const Index = () => {
           ))}
           {filteredBooks.length === 0 && (
             <div className="col-span-full text-center py-12 text-muted-foreground">
-              No books found. Add some books to get started!
+              {filter === "my-loans" 
+                ? "You haven't borrowed any books yet."
+                : "No books found. Add some books to get started!"}
             </div>
           )}
         </div>
