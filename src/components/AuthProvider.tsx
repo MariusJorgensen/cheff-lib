@@ -33,7 +33,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     refreshSession,
   } = useAuthState();
 
-  console.log("AuthProvider rendering", { isLoading, initializationComplete, session });
+  console.log("AuthProvider rendering", { isLoading, initializationComplete, session, user });
 
   useEffect(() => {
     let isMounted = true;
@@ -42,50 +42,81 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         console.log("Starting initialization");
         const freshSession = await refreshSession();
+        console.log("Fresh session received:", freshSession);
         
-        if (!isMounted) return;
+        if (!isMounted) {
+          console.log("Component unmounted during initialization");
+          return;
+        }
 
         setSession(freshSession);
         setUser(freshSession?.user ?? null);
         
         if (freshSession?.user) {
+          console.log("Checking approval status for user:", freshSession.user.id);
           const { approved, isAdmin: isAdminUser } = await checkApprovalStatus(freshSession.user.id);
-          setIsApproved(approved);
-          setIsAdmin(isAdminUser);
+          console.log("Approval status received:", { approved, isAdminUser });
+          if (isMounted) {
+            setIsApproved(approved);
+            setIsAdmin(isAdminUser);
+          }
+        } else {
+          console.log("No user in fresh session");
+          if (isMounted) {
+            setIsApproved(false);
+            setIsAdmin(false);
+          }
         }
       } catch (error) {
         console.error("Error during initialization:", error);
         if (isMounted) {
           setSession(null);
           setUser(null);
+          setIsApproved(false);
+          setIsAdmin(false);
         }
       } finally {
         if (isMounted) {
+          console.log("Completing initialization");
           setInitializationComplete(true);
           setIsLoading(false);
         }
       }
     };
 
+    console.log("Setting up auth subscriptions");
     initialize();
 
     // Listen for auth state changes
     const authSubscription = supabase.auth.onAuthStateChange(async (_event, newSession) => {
       console.log("Auth state changed", { event: _event, newSession });
       
-      if (!isMounted) return;
+      if (!isMounted) {
+        console.log("Component unmounted during auth state change");
+        return;
+      }
       
       setSession(newSession);
       setUser(newSession?.user ?? null);
       
       if (newSession?.user) {
+        console.log("Checking approval status after auth state change");
         const { approved, isAdmin: isAdminUser } = await checkApprovalStatus(newSession.user.id);
-        setIsApproved(approved);
-        setIsAdmin(isAdminUser);
+        console.log("New approval status:", { approved, isAdminUser });
+        if (isMounted) {
+          setIsApproved(approved);
+          setIsAdmin(isAdminUser);
+        }
+      } else {
+        console.log("No user in auth state change");
+        if (isMounted) {
+          setIsApproved(false);
+          setIsAdmin(false);
+        }
       }
     });
 
-    // Listen for profile changes using the correct type
+    // Listen for profile changes
     const channel = supabase.channel('profile-changes');
     
     const profileSubscription = channel
@@ -99,10 +130,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         },
         async (payload: RealtimePostgresChangesPayload<Profile>) => {
           console.log('Profile changed:', payload);
+          if (!isMounted) {
+            console.log("Component unmounted during profile change");
+            return;
+          }
+          
           if (user && payload.new && 'id' in payload.new && payload.new.id === user.id) {
+            console.log("Refreshing session after profile change");
             const freshSession = await refreshSession();
-            if (freshSession?.user) {
+            if (freshSession?.user && isMounted) {
               const { approved, isAdmin: isAdminUser } = await checkApprovalStatus(freshSession.user.id);
+              console.log("Updated approval status:", { approved, isAdminUser });
               setIsApproved(approved);
               setIsAdmin(isAdminUser);
             }
@@ -112,6 +150,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .subscribe();
 
     return () => {
+      console.log("Cleaning up auth subscriptions");
       isMounted = false;
       authSubscription.data.subscription.unsubscribe();
       supabase.removeChannel(channel);
@@ -121,11 +160,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!isLoading && initializationComplete) {
       const currentPath = window.location.pathname;
-      console.log("Navigation check", { currentPath, session });
+      console.log("Navigation check", { currentPath, session, isLoading, initializationComplete });
       
       if (!session && currentPath !== "/auth") {
+        console.log("Redirecting to auth page");
         navigate("/auth", { replace: true });
       } else if (session && currentPath === "/auth") {
+        console.log("Redirecting to home page");
         navigate("/", { replace: true });
       }
     }
@@ -134,6 +175,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = async () => {
     try {
       setIsLoading(true);
+      console.log("Signing out");
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
       
@@ -144,6 +186,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsAdmin(false);
       
       // Force navigation to auth page
+      console.log("Redirecting to auth page after signout");
       await navigate("/auth", { replace: true });
       
     } catch (error: any) {
@@ -159,6 +202,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   if (isLoading || !initializationComplete) {
+    console.log("Showing loading spinner", { isLoading, initializationComplete });
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-white"></div>
