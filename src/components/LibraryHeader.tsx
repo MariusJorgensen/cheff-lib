@@ -2,6 +2,7 @@
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { User } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { FeedbackDialog } from "@/components/FeedbackDialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,6 +22,7 @@ export function LibraryHeader({ userEmail, onSignOut }: LibraryHeaderProps) {
         cheff.lib
       </h1>
       <div className="flex items-center gap-4">
+        <FeedbackDialog />
         <ThemeToggle />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
