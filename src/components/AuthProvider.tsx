@@ -1,4 +1,3 @@
-
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "./ui/use-toast";
@@ -156,6 +155,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       supabase.removeChannel(channel);
     };
   }, [user?.id]);
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (isLoading) {
+        console.log("Spinner timeout reached, forcing completion");
+        setIsLoading(false);
+        setInitializationComplete(true);
+      }
+    }, 5000); // 5 second timeout
+
+    return () => clearTimeout(timeoutId);
+  }, [isLoading, setIsLoading, setInitializationComplete]);
 
   useEffect(() => {
     if (!isLoading && initializationComplete) {
