@@ -31,6 +31,7 @@ export const fetchBooks = async (userId: string | undefined = undefined) => {
       location,
       loans!fk_loans_book (
         lent_to,
+        user_id,
         returned_at,
         created_at
       ),
@@ -91,11 +92,14 @@ export const addBookToLibrary = async (
   } as Book;
 };
 
-export const lendBookToUser = async (id: number, borrowerName: string) => {
+export const lendBookToUser = async (bookId: number, userId: string) => {
   const { error } = await supabase
     .from('loans')
     .insert([
-      { book_id: id, lent_to: borrowerName }
+      { 
+        book_id: bookId, 
+        user_id: userId,
+      }
     ]);
 
   if (error) throw error;

@@ -18,7 +18,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 interface BookLendingControlsProps {
   book: Book;
-  onLend: (id: number, borrowerName: string) => void;
+  onLend: (id: number, userId: string) => void;
   onReturn: (id: number) => void;
   onClose: () => void;
 }
@@ -40,23 +40,11 @@ export function BookLendingControls({ book, onLend, onReturn, onClose }: BookLen
     }
 
     try {
-      // Get user's profile information
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('full_name')
-        .eq('id', user.id)
-        .single();
-
-      if (profileError) throw profileError;
-
-      const borrowerName = profile?.full_name || user.email;
-      if (borrowerName) {
-        onLend(book.id, borrowerName);
-        setShowLendDialog(false);
-        onClose();
-      }
+      onLend(book.id, user.id);
+      setShowLendDialog(false);
+      onClose();
     } catch (error) {
-      console.error('Error getting user profile:', error);
+      console.error('Error processing loan:', error);
       toast({
         title: "Error",
         description: "Failed to process borrowing request. Please try again.",

@@ -203,22 +203,25 @@ export type Database = {
           book_id: number | null
           created_at: string | null
           id: number
-          lent_to: string
+          lent_to: string | null
           returned_at: string | null
+          user_id: string | null
         }
         Insert: {
           book_id?: number | null
           created_at?: string | null
           id?: never
-          lent_to: string
+          lent_to?: string | null
           returned_at?: string | null
+          user_id?: string | null
         }
         Update: {
           book_id?: number | null
           created_at?: string | null
           id?: never
-          lent_to?: string
+          lent_to?: string | null
           returned_at?: string | null
+          user_id?: string | null
         }
         Relationships: [
           {
