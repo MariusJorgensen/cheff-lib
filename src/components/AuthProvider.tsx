@@ -43,6 +43,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     let isMounted = true;
+    let initTimeoutId: NodeJS.Timeout;
 
     const initialize = async () => {
       try {
@@ -75,30 +76,47 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setIsApproved(false);
           setIsAdmin(false);
         }
+
+        if (isMounted) {
+          console.log("Completing initialization");
+          setInitializationComplete(true);
+          setIsLoading(false);
+        }
       } catch (error) {
         console.error("Error during initialization:", error);
-        toast({
-          title: "Error",
-          description: "Failed to initialize session. Please try logging in again.",
-          variant: "destructive",
-        });
         if (isMounted) {
           setSession(null);
           setUser(null);
           setIsApproved(false);
           setIsAdmin(false);
-        }
-      } finally {
-        if (isMounted) {
-          console.log("Completing initialization");
           setInitializationComplete(true);
           setIsLoading(false);
+          
+          toast({
+            title: "Error",
+            description: "Failed to initialize session. Please try logging in again.",
+            variant: "destructive",
+          });
         }
       }
     };
 
     console.log("Setting up auth subscriptions");
     initialize();
+
+    // Set up initialization timeout
+    initTimeoutId = setTimeout(() => {
+      if (isMounted && isLoading) {
+        console.log("Loading timeout reached (10s), forcing reset");
+        setIsLoading(false);
+        setInitializationComplete(true);
+        toast({
+          title: "Session Error",
+          description: "Session initialization timed out. Please try logging in again.",
+          variant: "destructive",
+        });
+      }
+    }, 10000); // Increased to 10 seconds
 
     const authSubscription = supabase.auth.onAuthStateChange(async (_event, newSession) => {
       console.log("Auth state changed", { event: _event, newSession });
@@ -178,43 +196,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => {
       console.log("Cleaning up auth subscriptions");
       isMounted = false;
+      clearTimeout(initTimeoutId);
       authSubscription.data.subscription.unsubscribe();
       supabase.removeChannel(channel);
     };
   }, [user?.id]);
-
-  useEffect(() => {
-    const timeoutId = setTimeout(async () => {
-      if (isLoading) {
-        console.log("Loading timeout reached (3s), forcing logout");
-        // Clear all auth state
-        setIsLoading(false);
-        setInitializationComplete(true);
-        setSession(null);
-        setUser(null);
-        setIsApproved(false);
-        setIsAdmin(false);
-
-        // Force clear Supabase session
-        await supabase.auth.signOut();
-        
-        // Clear any localStorage data
-        localStorage.clear();
-        
-        // Show error toast
-        toast({
-          title: "Session Error",
-          description: "Session initialization timed out. Please try logging in again.",
-          variant: "destructive",
-        });
-        
-        // Force navigation to auth page
-        navigate("/auth", { replace: true });
-      }
-    }, 3000); // 3 second timeout
-
-    return () => clearTimeout(timeoutId);
-  }, [isLoading, setIsLoading, setInitializationComplete, toast, navigate]);
 
   useEffect(() => {
     if (!isLoading && initializationComplete) {
