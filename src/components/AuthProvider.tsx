@@ -42,42 +42,49 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log("Handling session:", currentSession);
       if (!mounted) return;
 
-      if (currentSession?.user) {
-        setSession(currentSession);
-        setUser(currentSession.user);
-        
-        try {
+      try {
+        if (currentSession?.user) {
+          console.log("Setting session and user");
+          setSession(currentSession);
+          setUser(currentSession.user);
+          
+          console.log("Checking approval status");
           const { approved, isAdmin: isAdminUser } = await checkApprovalStatus(currentSession.user.id);
           if (!mounted) return;
           
+          console.log("Setting approval status:", { approved, isAdmin: isAdminUser });
           setIsApproved(approved);
           setIsAdmin(isAdminUser);
-        } catch (error) {
-          console.error("Error checking approval status:", error);
-        }
 
-        if (window.location.pathname === '/auth') {
-          navigate('/', { replace: true });
-        }
-      } else {
-        setSession(null);
-        setUser(null);
-        setIsApproved(false);
-        setIsAdmin(false);
+          if (window.location.pathname === '/auth') {
+            console.log("Redirecting to home");
+            navigate('/', { replace: true });
+          }
+        } else {
+          console.log("No session, clearing state");
+          setSession(null);
+          setUser(null);
+          setIsApproved(false);
+          setIsAdmin(false);
 
-        if (window.location.pathname !== '/auth') {
-          navigate('/auth', { replace: true });
+          if (window.location.pathname !== '/auth') {
+            console.log("Redirecting to auth");
+            navigate('/auth', { replace: true });
+          }
         }
-      }
-
-      // Always complete initialization after handling session
-      if (mounted && !initializationComplete) {
-        console.log("Completing initialization after session handling");
-        setInitializationComplete(true);
+      } catch (error) {
+        console.error("Error in handleSession:", error);
+      } finally {
+        if (mounted) {
+          console.log("Setting initialization complete");
+          setInitializationComplete(true);
+        }
       }
     };
 
     const initialize = async () => {
+      if (!mounted) return;
+
       try {
         console.log("Getting initial session...");
         const { data: { session: initialSession } } = await supabase.auth.getSession();
@@ -92,13 +99,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             description: "Failed to initialize session",
             variant: "destructive",
           });
-          // Ensure initialization completes even on error
           setInitializationComplete(true);
         }
       }
     };
 
-    // Set up auth subscription
+    // Set up auth subscription first
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
       console.log("Auth state changed:", event, newSession);
       if (mounted) {
@@ -106,7 +112,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     });
 
-    // Initialize
+    // Then initialize
     initialize();
 
     // Clean up function
@@ -115,7 +121,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, [navigate]);
+  }, [navigate, setSession, setUser, setIsApproved, setIsAdmin, setInitializationComplete]);
 
   const signOut = async () => {
     try {
