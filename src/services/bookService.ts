@@ -29,12 +29,13 @@ export const fetchBooks = async (userId: string | undefined = undefined) => {
       average_rating,
       ai_summary,
       location,
-      loans (
+      loans!inner (
         user_id,
         returned_at,
         created_at,
         lent_to,
-        profiles (
+        profiles!inner (
+          id,
           full_name,
           email
         )
