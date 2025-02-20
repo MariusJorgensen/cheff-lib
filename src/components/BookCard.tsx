@@ -11,9 +11,10 @@ interface BookCardProps {
   book: Book;
   onLend: (id: number, borrowerName: string) => void;
   onReturn: (id: number) => void;
+  onDelete: (id: number) => void;
 }
 
-export function BookCard({ book, onLend, onReturn }: BookCardProps) {
+export function BookCard({ book, onLend, onReturn, onDelete }: BookCardProps) {
   const [showDetailDialog, setShowDetailDialog] = useState(false);
 
   // Count total reactions
@@ -75,7 +76,8 @@ export function BookCard({ book, onLend, onReturn }: BookCardProps) {
           <BookDetailView 
             book={book} 
             onLend={onLend} 
-            onReturn={onReturn} 
+            onReturn={onReturn}
+            onDelete={onDelete}
             onClose={() => setShowDetailDialog(false)} 
           />
         </DialogContent>

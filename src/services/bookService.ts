@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { formatBookData } from "@/utils/bookFormatters";
 import { Book } from "@/types";
@@ -107,6 +106,15 @@ export const returnBookToLibrary = async (id: number) => {
     .update({ returned_at: new Date().toISOString() })
     .eq('book_id', id)
     .is('returned_at', null);
+
+  if (error) throw error;
+};
+
+export const deleteBook = async (id: number) => {
+  const { error } = await supabase
+    .from('books')
+    .delete()
+    .eq('id', id);
 
   if (error) throw error;
 };

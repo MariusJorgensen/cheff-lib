@@ -1,4 +1,3 @@
-
 import { Book, Comment } from "@/types";
 import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
@@ -10,15 +9,17 @@ import { BookComments } from "./book-detail/BookComments";
 import { BookLendingControls } from "./book-detail/BookLendingControls";
 import { Button } from "./ui/button";
 import { MapPin } from "lucide-react";
+import { deleteBook } from "@/services/bookService";
 
 interface BookDetailViewProps {
   book: Book;
   onLend: (id: number, borrowerName: string) => void;
   onReturn: (id: number) => void;
+  onDelete: (id: number) => void;
   onClose: () => void;
 }
 
-export function BookDetailView({ book, onLend, onReturn, onClose }: BookDetailViewProps) {
+export function BookDetailView({ book, onLend, onReturn, onDelete, onClose }: BookDetailViewProps) {
   const [comments, setComments] = useState<Comment[]>([]);
   const [isLoadingComments, setIsLoadingComments] = useState(false);
   const [visibleComments, setVisibleComments] = useState(2);
@@ -153,6 +154,24 @@ export function BookDetailView({ book, onLend, onReturn, onClose }: BookDetailVi
     }
   };
 
+  const handleDelete = async (id: number) => {
+    try {
+      await deleteBook(id);
+      onDelete(id);
+      toast({
+        title: "Success",
+        description: "Book deleted successfully",
+      });
+    } catch (error) {
+      console.error('Error deleting book:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete book. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   useEffect(() => {
     fetchComments();
   }, []);
@@ -172,6 +191,7 @@ export function BookDetailView({ book, onLend, onReturn, onClose }: BookDetailVi
         book={book}
         onLend={onLend}
         onReturn={onReturn}
+        onDelete={handleDelete}
         onClose={onClose}
       />
 
