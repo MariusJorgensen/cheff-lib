@@ -36,7 +36,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Initialize auth state
   useEffect(() => {
     let mounted = true;
-    setIsLoading(true);
 
     const initialize = async () => {
       if (!mounted) return;
@@ -69,6 +68,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             navigate('/auth', { replace: true });
           }
         }
+
+        if (mounted) {
+          setInitializationComplete(true);
+        }
       } catch (error) {
         console.error("Error during initialization:", error);
         if (mounted) {
@@ -77,11 +80,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             description: "Failed to initialize session",
             variant: "destructive",
           });
-        }
-      } finally {
-        if (mounted) {
-          setIsLoading(false);
-          setInitializationComplete(true);
+          setInitializationComplete(true); // Even on error, we should complete initialization
         }
       }
     };
@@ -175,6 +174,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // Only show loading state during initial initialization
   if (!initializationComplete) {
     return (
       <div className="min-h-screen flex items-center justify-center">
