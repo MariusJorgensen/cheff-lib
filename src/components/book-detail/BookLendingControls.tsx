@@ -25,15 +25,15 @@ interface BookLendingControlsProps {
 
 export function BookLendingControls({ book, onLend, onReturn, onClose }: BookLendingControlsProps) {
   const [showReturnDialog, setShowReturnDialog] = useState(false);
-  const [showLendDialog, setShowLendDialog] = useState(false);
+  const [showBorrowDialog, setShowBorrowDialog] = useState(false);
   const { user, isAdmin } = useAuth();
   const { toast } = useToast();
 
-  const handleLendSubmit = async () => {
+  const handleBorrowSubmit = async () => {
     if (!user) {
       toast({
         title: "Error",
-        description: "You must be logged in to lend books",
+        description: "You must be logged in to borrow books",
         variant: "destructive",
       });
       return;
@@ -52,14 +52,14 @@ export function BookLendingControls({ book, onLend, onReturn, onClose }: BookLen
       const borrowerName = profile?.full_name || user.email;
       if (borrowerName) {
         onLend(book.id, borrowerName);
-        setShowLendDialog(false);
+        setShowBorrowDialog(false);
         onClose();
       }
     } catch (error) {
       console.error('Error getting user profile:', error);
       toast({
         title: "Error",
-        description: "Failed to process lending request. Please try again.",
+        description: "Failed to process borrowing request. Please try again.",
         variant: "destructive",
       });
     }
@@ -81,7 +81,7 @@ export function BookLendingControls({ book, onLend, onReturn, onClose }: BookLen
           <AlertDialogHeader>
             <AlertDialogTitle>Return Book</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to mark "{book.title}" as returned from {book.lentTo}?
+              Are you sure you want to return "{book.title}"?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -99,21 +99,21 @@ export function BookLendingControls({ book, onLend, onReturn, onClose }: BookLen
     </>
   ) : (
     <>
-      <Button variant="outline" onClick={() => setShowLendDialog(true)} className="w-full">
-        Lend Book
+      <Button variant="outline" onClick={() => setShowBorrowDialog(true)} className="w-full">
+        Borrow Book
       </Button>
-      <AlertDialog open={showLendDialog} onOpenChange={setShowLendDialog}>
+      <AlertDialog open={showBorrowDialog} onOpenChange={setShowBorrowDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Lend Book</AlertDialogTitle>
+            <AlertDialogTitle>Borrow Book</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to lend "{book.title}"?
+              Are you sure you want to borrow "{book.title}"?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleLendSubmit}>
-              Confirm Loan
+            <AlertDialogAction onClick={handleBorrowSubmit}>
+              Confirm Borrow
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
