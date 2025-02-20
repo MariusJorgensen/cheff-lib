@@ -13,7 +13,7 @@ const Index = () => {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
   const { user, signOut, isApproved, isAdmin } = useAuth();
-  const { books, addBook, lendBook, returnBook } = useBooks(user);
+  const { books, addBook, lendBook, returnBook, deleteBook } = useBooks(user);
 
   const filteredBooks = books.filter((book) => {
     const matchesSearch = book.title.toLowerCase().includes(search.toLowerCase()) ||
@@ -72,6 +72,7 @@ const Index = () => {
               book={book}
               onLend={lendBook}
               onReturn={returnBook}
+              onDelete={deleteBook}
             />
           ))}
           {filteredBooks.length === 0 && (

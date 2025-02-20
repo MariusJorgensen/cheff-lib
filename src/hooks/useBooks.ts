@@ -8,7 +8,8 @@ import {
   fetchBooks, 
   addBookToLibrary, 
   lendBookToUser, 
-  returnBookToLibrary 
+  returnBookToLibrary,
+  deleteBook as deleteBookService
 } from "@/services/bookService";
 
 export function useBooks(user: User | null) {
@@ -89,6 +90,24 @@ export function useBooks(user: User | null) {
     }
   };
 
+  const deleteBook = async (id: number) => {
+    try {
+      await deleteBookService(id);
+      setBooks(books.filter(book => book.id !== id));
+      toast({
+        title: "Success",
+        description: "Book has been deleted from the library.",
+      });
+    } catch (error) {
+      console.error('Error deleting book:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete book. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   useEffect(() => {
     refreshBooks();
 
@@ -150,5 +169,5 @@ export function useBooks(user: User | null) {
     };
   }, [user]);
 
-  return { books, addBook, lendBook, returnBook };
+  return { books, addBook, lendBook, returnBook, deleteBook };
 }
