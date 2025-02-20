@@ -65,9 +65,8 @@ export function BookLendingControls({ book, onLend, onReturn, onClose }: BookLen
     }
   };
 
-  // Check if the current user is the one who originally lent the book
-  const isLender = user?.email?.toLowerCase() === user?.email?.toLowerCase();
-  const canReturnBook = isAdmin || isLender;
+  // Only admins can return books
+  const canReturnBook = isAdmin;
 
   return book.lentTo ? (
     <>
