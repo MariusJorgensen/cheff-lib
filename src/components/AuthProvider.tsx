@@ -5,7 +5,6 @@ import { useToast } from "./ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { AuthContext } from "@/contexts/AuthContext";
 import { useAuthState } from "@/hooks/useAuthState";
-import { checkApprovalStatus } from "@/services/approvalService";
 import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 
 type Profile = {
@@ -178,22 +177,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [user?.id]);
 
   useEffect(() => {
-    const timeoutId = setTimeout(() => {
+    const timeoutId = setTimeout(async () => {
       if (isLoading) {
-        console.log("Spinner timeout reached, forcing completion");
+        console.log("Loading timeout reached (3s), forcing logout");
+        // Clear all auth state
         setIsLoading(false);
         setInitializationComplete(true);
-        // Show error toast if we had to force timeout
+        setSession(null);
+        setUser(null);
+        setIsApproved(false);
+        setIsAdmin(false);
+
+        // Force clear Supabase session
+        await supabase.auth.signOut();
+        
+        // Clear any localStorage data
+        localStorage.clear();
+        
+        // Show error toast
         toast({
           title: "Session Error",
-          description: "There was an issue loading your session. Please try logging in again.",
+          description: "Session initialization timed out. Please try logging in again.",
           variant: "destructive",
         });
+        
+        // Force navigation to auth page
+        navigate("/auth", { replace: true });
       }
-    }, 5000); // 5 second timeout
+    }, 3000); // 3 second timeout
 
     return () => clearTimeout(timeoutId);
-  }, [isLoading, setIsLoading, setInitializationComplete, toast]);
+  }, [isLoading, setIsLoading, setInitializationComplete, toast, navigate]);
 
   useEffect(() => {
     if (!isLoading && initializationComplete) {
@@ -222,6 +236,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(null);
       setIsApproved(false);
       setIsAdmin(false);
+      
+      // Clear any localStorage data
+      localStorage.clear();
       
       // Force navigation to auth page
       console.log("Redirecting to auth page after signout");
