@@ -18,7 +18,7 @@ export const fetchUserRatingsAndReactions = async (userId: string) => {
 };
 
 export const fetchBooks = async (userId: string | undefined = undefined) => {
-  // Fetch books with their active loans (if any)
+  // Fetch books with their active loans (if any) and include user profile info
   const { data: booksData, error: booksError } = await supabase
     .from('books')
     .select(`
@@ -33,7 +33,11 @@ export const fetchBooks = async (userId: string | undefined = undefined) => {
         lent_to,
         user_id,
         returned_at,
-        created_at
+        created_at,
+        profiles:user_id (
+          full_name,
+          email
+        )
       ),
       book_ratings!fk_book_ratings_book_id (
         rating
@@ -54,7 +58,18 @@ export const fetchBooks = async (userId: string | undefined = undefined) => {
     userReactions = userData.reactions;
   }
 
-  return booksData.map(book => formatBookData(book, userRatings, userReactions));
+  // Process the books data to include proper borrower information
+  const processedBooksData = booksData.map(book => {
+    const activeLoan = book.loans?.find((loan: any) => !loan.returned_at);
+    if (activeLoan) {
+      const userProfile = activeLoan.profiles;
+      // Use full name if available, otherwise use email
+      book.loans[0].lent_to = userProfile.full_name || userProfile.email;
+    }
+    return book;
+  });
+
+  return processedBooksData.map(book => formatBookData(book, userRatings, userReactions));
 };
 
 export const addBookToLibrary = async (
@@ -93,12 +108,20 @@ export const addBookToLibrary = async (
 };
 
 export const lendBookToUser = async (bookId: number, userId: string) => {
+  // Get user profile
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('full_name, email')
+    .eq('id', userId)
+    .single();
+
   const { error } = await supabase
     .from('loans')
     .insert([
       { 
         book_id: bookId, 
         user_id: userId,
+        lent_to: profile?.full_name || profile?.email
       }
     ]);
 

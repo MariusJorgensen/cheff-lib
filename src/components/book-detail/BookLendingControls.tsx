@@ -14,7 +14,6 @@ import {
 import { useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import { useToast } from "@/components/ui/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 
 interface BookLendingControlsProps {
   book: Book;
@@ -53,10 +52,10 @@ export function BookLendingControls({ book, onLend, onReturn, onClose }: BookLen
     }
   };
 
-  // Users can return books they borrowed, admins can return any book
-  const currentUserEmail = user?.email?.toLowerCase() || '';
-  const bookLentTo = book.lentTo?.toLowerCase() || '';
-  const isCurrentBorrower = currentUserEmail === bookLentTo;
+  // Check if current user is the borrower using user ID
+  const isCurrentBorrower = user && book.loans?.some(loan => 
+    !loan.returned_at && loan.user_id === user.id
+  );
   const canReturnBook = isAdmin || isCurrentBorrower;
 
   return book.lentTo ? (
