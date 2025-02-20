@@ -26,7 +26,7 @@ interface BookLendingControlsProps {
 export function BookLendingControls({ book, onLend, onReturn, onClose }: BookLendingControlsProps) {
   const [showReturnDialog, setShowReturnDialog] = useState(false);
   const [showLendDialog, setShowLendDialog] = useState(false);
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const { toast } = useToast();
 
   const handleLendSubmit = async () => {
@@ -65,11 +65,17 @@ export function BookLendingControls({ book, onLend, onReturn, onClose }: BookLen
     }
   };
 
+  // Check if current user is the borrower
+  const isCurrentUserBorrower = user?.email?.toLowerCase() === book.lentTo?.toLowerCase();
+  const canReturnBook = isAdmin || isCurrentUserBorrower;
+
   return book.lentTo ? (
     <>
-      <Button variant="outline" onClick={() => setShowReturnDialog(true)} className="w-full">
-        Return Book
-      </Button>
+      {canReturnBook && (
+        <Button variant="outline" onClick={() => setShowReturnDialog(true)} className="w-full">
+          Return Book
+        </Button>
+      )}
       <AlertDialog open={showReturnDialog} onOpenChange={setShowReturnDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
