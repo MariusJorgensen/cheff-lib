@@ -36,6 +36,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Initialize auth state
   useEffect(() => {
     let mounted = true;
+    setIsLoading(true);
 
     const initialize = async () => {
       if (!mounted) return;
@@ -79,6 +80,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       } finally {
         if (mounted) {
+          setIsLoading(false);
           setInitializationComplete(true);
         }
       }
@@ -174,7 +176,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   if (!initializationComplete) {
-    return null;
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-white"></div>
+      </div>
+    );
   }
 
   return (
