@@ -29,7 +29,7 @@ export const fetchBooks = async (userId: string | undefined = undefined) => {
       average_rating,
       ai_summary,
       location,
-      loans!fk_loans_book (
+      loans (
         lent_to,
         user_id,
         returned_at,
@@ -61,10 +61,9 @@ export const fetchBooks = async (userId: string | undefined = undefined) => {
   // Process the books data to include proper borrower information
   const processedBooksData = booksData.map(book => {
     const activeLoan = book.loans?.find((loan: any) => !loan.returned_at);
-    if (activeLoan) {
+    if (activeLoan && activeLoan.profiles) {
       const userProfile = activeLoan.profiles;
-      // Use full name if available, otherwise use email
-      book.loans[0].lent_to = userProfile.full_name || userProfile.email;
+      activeLoan.lent_to = userProfile.full_name || userProfile.email;
     }
     return book;
   });
@@ -115,13 +114,17 @@ export const lendBookToUser = async (bookId: number, userId: string) => {
     .eq('id', userId)
     .single();
 
+  if (!profile) {
+    throw new Error('User profile not found');
+  }
+
   const { error } = await supabase
     .from('loans')
     .insert([
       { 
         book_id: bookId, 
         user_id: userId,
-        lent_to: profile?.full_name || profile?.email
+        lent_to: profile.full_name || profile.email
       }
     ]);
 

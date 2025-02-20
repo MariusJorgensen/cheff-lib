@@ -12,6 +12,12 @@ export interface Book {
   userReactions?: string[];
   location: 'Stockholm 🇸🇪' | 'Oslo 🇧🇻';
   loanDate?: string | null;
+  loans?: Array<{
+    user_id: string;
+    returned_at: string | null;
+    lent_to: string | null;
+    created_at: string;
+  }>;
 }
 
 export interface Comment {

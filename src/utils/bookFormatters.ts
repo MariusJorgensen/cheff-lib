@@ -36,5 +36,6 @@ export const formatBookData = (
     reactions: reactionCounts,
     userReactions: bookUserReactions || [],
     location,
+    loans: book.loans,
   };
 };
