@@ -52,6 +52,21 @@ export function BookLendingControls({ book, onLend, onReturn, onClose }: BookLen
     }
   };
 
+  const handleReturnSubmit = () => {
+    try {
+      onReturn(book.id);
+      setShowReturnDialog(false);
+      onClose();
+    } catch (error) {
+      console.error('Error returning book:', error);
+      toast({
+        title: "Error",
+        description: "Failed to return book. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   // Check if current user is the borrower using user ID
   const isCurrentBorrower = user && book.loans?.some(loan => 
     !loan.returned_at && loan.user_id === user.id
@@ -75,11 +90,7 @@ export function BookLendingControls({ book, onLend, onReturn, onClose }: BookLen
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={() => {
-              onReturn(book.id);
-              setShowReturnDialog(false);
-              onClose();
-            }}>
+            <AlertDialogAction onClick={handleReturnSubmit}>
               Confirm Return
             </AlertDialogAction>
           </AlertDialogFooter>
