@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { formatBookData } from "@/utils/bookFormatters";
 import { Book } from "@/types";
@@ -17,18 +18,14 @@ export const fetchUserRatingsAndReactions = async (userId: string) => {
 };
 
 export const fetchBooks = async (userId: string | undefined = undefined) => {
+  console.log('Fetching books with userId:', userId);
+  
   // Fetch books with their active loans (if any)
   const { data: booksData, error: booksError } = await supabase
     .from('books')
     .select(`
-      id,
-      title,
-      author,
-      image_url,
-      average_rating,
-      ai_summary,
-      location,
-      loans!fk_loans_book (
+      *,
+      loans!inner (
         lent_to,
         returned_at,
         created_at
@@ -41,7 +38,12 @@ export const fetchBooks = async (userId: string | undefined = undefined) => {
       )
     `);
 
-  if (booksError) throw booksError;
+  if (booksError) {
+    console.error('Error fetching books:', booksError);
+    throw booksError;
+  }
+
+  console.log('Fetched books data:', booksData);
 
   let userRatings = null;
   let userReactions = null;
