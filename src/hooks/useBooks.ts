@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Book } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
@@ -16,7 +16,7 @@ export function useBooks(user: User | null) {
   const [books, setBooks] = useState<Book[]>([]);
   const { toast } = useToast();
 
-  const refreshBooks = async () => {
+  const refreshBooks = useCallback(async () => {
     try {
       const booksData = await fetchBooks(user?.id);
       setBooks(booksData);
@@ -28,7 +28,7 @@ export function useBooks(user: User | null) {
         variant: "destructive",
       });
     }
-  };
+  }, [user?.id, toast]);
 
   const addBook = async (title: string, author: string, imageUrl: string, location: 'Stockholm 🇸🇪' | 'Oslo 🇧🇻') => {
     try {
@@ -109,6 +109,9 @@ export function useBooks(user: User | null) {
   };
 
   useEffect(() => {
+    if (!user) return; // Don't fetch books if there's no user
+    
+    console.log('Fetching books for user:', user.id);
     refreshBooks();
 
     // Subscribe to real-time changes
@@ -167,7 +170,7 @@ export function useBooks(user: User | null) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user]);
+  }, [user, refreshBooks]); // Add refreshBooks to dependencies
 
   return { books, addBook, lendBook, returnBook, deleteBook };
 }
