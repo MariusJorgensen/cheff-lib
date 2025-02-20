@@ -3,21 +3,18 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useAuth } from "@/components/AuthProvider";
 
 const Auth = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(true);
   const { session } = useAuth();
 
   useEffect(() => {
-    console.log("Auth component session:", session);
     if (session) {
-      navigate('/');
+      navigate('/', { replace: true });
     }
-    setIsLoading(false);
   }, [session, navigate]);
 
   const handleGoogleSignIn = async () => {
@@ -43,14 +40,6 @@ const Auth = () => {
       });
     }
   };
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-white"></div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">

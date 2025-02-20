@@ -8,7 +8,7 @@ export function useAuthState() {
   const [user, setUser] = useState<User | null>(null);
   const [isApproved, setIsApproved] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [initializationComplete, setInitializationComplete] = useState(false);
 
   const refreshSession = async () => {
