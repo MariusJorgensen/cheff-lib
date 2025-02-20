@@ -65,8 +65,9 @@ export function BookLendingControls({ book, onLend, onReturn, onClose }: BookLen
     }
   };
 
-  // Users can return books they borrowed, admins can return any book
+  // Check if the current user is the borrower
   const isCurrentBorrower = user?.email?.toLowerCase() === book.lentTo?.toLowerCase();
+  // User can return if they're the borrower or if they're an admin
   const canReturnBook = isAdmin || isCurrentBorrower;
 
   return book.lentTo ? (
@@ -76,12 +77,19 @@ export function BookLendingControls({ book, onLend, onReturn, onClose }: BookLen
           Return Book
         </Button>
       )}
+      {!canReturnBook && (
+        <div className="text-sm text-muted-foreground text-center py-2">
+          Currently borrowed by {book.lentTo}
+        </div>
+      )}
       <AlertDialog open={showReturnDialog} onOpenChange={setShowReturnDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Return Book</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to return "{book.title}"?
+              {isAdmin && !isCurrentBorrower 
+                ? `Are you sure you want to return "${book.title}" borrowed by ${book.lentTo}?`
+                : `Are you sure you want to return "${book.title}"?`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
