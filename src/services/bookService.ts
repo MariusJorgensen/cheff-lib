@@ -4,56 +4,93 @@ import { formatBookData } from "@/utils/bookFormatters";
 import { Book } from "@/types";
 
 export const fetchUserRatingsAndReactions = async (userId: string) => {
-  const { data: ratings } = await supabase
+  console.log('Fetching user ratings and reactions for userId:', userId);
+  
+  const { data: ratings, error: ratingsError } = await supabase
     .from('book_ratings')
     .select('book_id, rating')
     .eq('user_id', userId);
+    
+  if (ratingsError) {
+    console.error('Error fetching ratings:', ratingsError);
+  } else {
+    console.log('Fetched ratings:', ratings);
+  }
   
-  const { data: reactions } = await supabase
+  const { data: reactions, error: reactionsError } = await supabase
     .from('book_reactions')
     .select('book_id, reaction')
     .eq('user_id', userId);
+    
+  if (reactionsError) {
+    console.error('Error fetching reactions:', reactionsError);
+  } else {
+    console.log('Fetched reactions:', reactions);
+  }
 
   return { ratings, reactions };
 };
 
 export const fetchBooks = async (userId: string | undefined = undefined) => {
-  // Fetch books with their active loans (if any)
-  const { data: booksData, error: booksError } = await supabase
-    .from('books')
-    .select(`
-      id,
-      title,
-      author,
-      image_url,
-      average_rating,
-      ai_summary,
-      location,
-      loans!fk_loans_book (
-        lent_to,
-        returned_at,
-        created_at
-      ),
-      book_ratings (
-        rating
-      ),
-      book_reactions (
-        reaction
-      )
-    `);
+  console.log('Starting fetchBooks with userId:', userId);
+  
+  try {
+    // Fetch books and their related data
+    console.log('Executing Supabase query for books...');
+    const { data: booksData, error: booksError } = await supabase
+      .from('books')
+      .select(`
+        *,
+        loans (
+          lent_to,
+          returned_at,
+          created_at
+        ),
+        book_ratings (
+          rating
+        ),
+        book_reactions (
+          reaction
+        )
+      `);
 
-  if (booksError) throw booksError;
+    if (booksError) {
+      console.error('Supabase error when fetching books:', booksError);
+      console.error('Error details:', {
+        message: booksError.message,
+        details: booksError.details,
+        hint: booksError.hint
+      });
+      throw booksError;
+    }
 
-  let userRatings = null;
-  let userReactions = null;
+    console.log('Books data received:', booksData);
+    console.log('Number of books fetched:', booksData?.length ?? 0);
 
-  if (userId) {
-    const userData = await fetchUserRatingsAndReactions(userId);
-    userRatings = userData.ratings;
-    userReactions = userData.reactions;
+    let userRatings = null;
+    let userReactions = null;
+
+    if (userId) {
+      console.log('Fetching user-specific data for userId:', userId);
+      const userData = await fetchUserRatingsAndReactions(userId);
+      userRatings = userData.ratings;
+      userReactions = userData.reactions;
+      console.log('User ratings:', userRatings);
+      console.log('User reactions:', userReactions);
+    }
+
+    const formattedBooks = booksData.map(book => {
+      console.log('Formatting book:', book.title);
+      return formatBookData(book, userRatings, userReactions);
+    });
+
+    console.log('Returning formatted books:', formattedBooks);
+    return formattedBooks;
+  } catch (error) {
+    console.error('Caught error in fetchBooks:', error);
+    console.error('Error stack:', (error as Error).stack);
+    throw error;
   }
-
-  return booksData.map(book => formatBookData(book, userRatings, userReactions));
 };
 
 export const addBookToLibrary = async (
@@ -62,6 +99,8 @@ export const addBookToLibrary = async (
   imageUrl: string,
   location: 'Stockholm 🇸🇪' | 'Oslo 🇧🇻'
 ) => {
+  console.log('Adding book to library:', { title, author, imageUrl, location });
+  
   const { data, error } = await supabase
     .from('books')
     .insert([
@@ -75,7 +114,12 @@ export const addBookToLibrary = async (
     .select()
     .single();
 
-  if (error) throw error;
+  if (error) {
+    console.error('Error adding book:', error);
+    throw error;
+  }
+
+  console.log('Successfully added book:', data);
 
   return {
     id: data.id,
@@ -92,21 +136,35 @@ export const addBookToLibrary = async (
 };
 
 export const lendBookToUser = async (id: number, borrowerName: string) => {
+  console.log('Lending book:', { id, borrowerName });
+  
   const { error } = await supabase
     .from('loans')
     .insert([
       { book_id: id, lent_to: borrowerName }
     ]);
 
-  if (error) throw error;
+  if (error) {
+    console.error('Error lending book:', error);
+    throw error;
+  }
+
+  console.log('Successfully lent book');
 };
 
 export const returnBookToLibrary = async (id: number) => {
+  console.log('Returning book:', { id });
+  
   const { error } = await supabase
     .from('loans')
     .update({ returned_at: new Date().toISOString() })
     .eq('book_id', id)
     .is('returned_at', null);
 
-  if (error) throw error;
+  if (error) {
+    console.error('Error returning book:', error);
+    throw error;
+  }
+
+  console.log('Successfully returned book');
 };
