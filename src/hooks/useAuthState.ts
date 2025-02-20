@@ -15,15 +15,18 @@ export function useAuthState() {
     try {
       console.log("Refreshing session...");
       const { data: { session: freshSession }, error } = await supabase.auth.getSession();
+      
       if (error) {
         console.error("Error refreshing session:", error);
-        return null;
+        throw error;
       }
+      
       console.log("Session refresh complete:", freshSession);
       return freshSession;
     } catch (error) {
       console.error("Exception in refreshSession:", error);
-      return null;
+      // Instead of returning null, throw the error so it can be handled by the caller
+      throw error;
     }
   };
 
