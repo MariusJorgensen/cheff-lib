@@ -29,12 +29,12 @@ export const fetchBooks = async (userId: string | undefined = undefined) => {
       average_rating,
       ai_summary,
       location,
-      loans!inner (
+      loans (
         user_id,
         returned_at,
         created_at,
         lent_to,
-        profiles!inner (
+        user:user_id (
           id,
           full_name,
           email
@@ -62,8 +62,8 @@ export const fetchBooks = async (userId: string | undefined = undefined) => {
   // Process the books data to include proper borrower information
   const processedBooksData = booksData.map(book => {
     const activeLoan = book.loans?.find((loan: any) => !loan.returned_at);
-    if (activeLoan && activeLoan.profiles) {
-      const userProfile = activeLoan.profiles;
+    if (activeLoan && activeLoan.user) {
+      const userProfile = activeLoan.user;
       activeLoan.lent_to = userProfile.full_name || userProfile.email;
     }
     return book;
