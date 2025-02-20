@@ -18,14 +18,18 @@ export const fetchUserRatingsAndReactions = async (userId: string) => {
 };
 
 export const fetchBooks = async (userId: string | undefined = undefined) => {
-  console.log('Fetching books with userId:', userId);
-  
-  // Fetch books and their related data using left joins
+  // Fetch books with their active loans (if any)
   const { data: booksData, error: booksError } = await supabase
     .from('books')
     .select(`
-      *,
-      loans (
+      id,
+      title,
+      author,
+      image_url,
+      average_rating,
+      ai_summary,
+      location,
+      loans!fk_loans_book (
         lent_to,
         returned_at,
         created_at
@@ -38,12 +42,7 @@ export const fetchBooks = async (userId: string | undefined = undefined) => {
       )
     `);
 
-  if (booksError) {
-    console.error('Error fetching books:', booksError);
-    throw booksError;
-  }
-
-  console.log('Fetched books data:', booksData);
+  if (booksError) throw booksError;
 
   let userRatings = null;
   let userReactions = null;
@@ -108,15 +107,6 @@ export const returnBookToLibrary = async (id: number) => {
     .update({ returned_at: new Date().toISOString() })
     .eq('book_id', id)
     .is('returned_at', null);
-
-  if (error) throw error;
-};
-
-export const deleteBook = async (id: number) => {
-  const { error } = await supabase
-    .from('books')
-    .delete()
-    .eq('id', id);
 
   if (error) throw error;
 };

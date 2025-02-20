@@ -20,14 +20,12 @@ interface BookLendingControlsProps {
   book: Book;
   onLend: (id: number, borrowerName: string) => void;
   onReturn: (id: number) => void;
-  onDelete?: (id: number) => void;
   onClose: () => void;
 }
 
-export function BookLendingControls({ book, onLend, onReturn, onDelete, onClose }: BookLendingControlsProps) {
+export function BookLendingControls({ book, onLend, onReturn, onClose }: BookLendingControlsProps) {
   const [showReturnDialog, setShowReturnDialog] = useState(false);
   const [showBorrowDialog, setShowBorrowDialog] = useState(false);
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const { user, isAdmin } = useAuth();
   const { toast } = useToast();
 
@@ -72,106 +70,62 @@ export function BookLendingControls({ book, onLend, onReturn, onDelete, onClose 
   // User can return if they're the borrower or if they're an admin
   const canReturnBook = isAdmin || isCurrentBorrower;
 
-  return (
-    <div className="space-y-2">
-      {book.lentTo ? (
-        <>
-          {canReturnBook && (
-            <Button variant="outline" onClick={() => setShowReturnDialog(true)} className="w-full">
-              Return Book
-            </Button>
-          )}
-          {!canReturnBook && (
-            <div className="text-sm text-muted-foreground text-center py-2">
-              Currently borrowed by {book.lentTo}
-            </div>
-          )}
-          <AlertDialog open={showReturnDialog} onOpenChange={setShowReturnDialog}>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Return Book</AlertDialogTitle>
-                <AlertDialogDescription>
-                  {isAdmin && !isCurrentBorrower 
-                    ? `Are you sure you want to return "${book.title}" borrowed by ${book.lentTo}?`
-                    : `Are you sure you want to return "${book.title}"?`}
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={() => {
-                  onReturn(book.id);
-                  setShowReturnDialog(false);
-                  onClose();
-                }}>
-                  Confirm Return
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </>
-      ) : (
-        <>
-          <Button variant="outline" onClick={() => setShowBorrowDialog(true)} className="w-full">
-            Borrow Book
-          </Button>
-          <AlertDialog open={showBorrowDialog} onOpenChange={setShowBorrowDialog}>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Borrow Book</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Are you sure you want to borrow "{book.title}"?
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleBorrowSubmit}>
-                  Confirm Borrow
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </>
+  return book.lentTo ? (
+    <>
+      {canReturnBook && (
+        <Button variant="outline" onClick={() => setShowReturnDialog(true)} className="w-full">
+          Return Book
+        </Button>
       )}
-
-      {isAdmin && onDelete && (
-        <>
-          <Button 
-            variant="destructive" 
-            onClick={() => setShowDeleteDialog(true)} 
-            className="w-full"
-          >
-            Delete Book
-          </Button>
-          <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Delete Book</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Are you sure you want to delete "{book.title}"? This action cannot be undone.
-                  {book.lentTo && (
-                    <div className="mt-2 font-semibold">
-                      Warning: This book is currently borrowed by {book.lentTo}.
-                    </div>
-                  )}
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction 
-                  onClick={() => {
-                    onDelete(book.id);
-                    setShowDeleteDialog(false);
-                    onClose();
-                  }}
-                  className="bg-destructive hover:bg-destructive/90"
-                >
-                  Delete Book
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </>
+      {!canReturnBook && (
+        <div className="text-sm text-muted-foreground text-center py-2">
+          Currently borrowed by {book.lentTo}
+        </div>
       )}
-    </div>
+      <AlertDialog open={showReturnDialog} onOpenChange={setShowReturnDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Return Book</AlertDialogTitle>
+            <AlertDialogDescription>
+              {isAdmin && !isCurrentBorrower 
+                ? `Are you sure you want to return "${book.title}" borrowed by ${book.lentTo}?`
+                : `Are you sure you want to return "${book.title}"?`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => {
+              onReturn(book.id);
+              setShowReturnDialog(false);
+              onClose();
+            }}>
+              Confirm Return
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  ) : (
+    <>
+      <Button variant="outline" onClick={() => setShowBorrowDialog(true)} className="w-full">
+        Borrow Book
+      </Button>
+      <AlertDialog open={showBorrowDialog} onOpenChange={setShowBorrowDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Borrow Book</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to borrow "{book.title}"?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleBorrowSubmit}>
+              Confirm Borrow
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

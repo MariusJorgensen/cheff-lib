@@ -1,46 +1,40 @@
 
 import { Book } from "@/types";
 
-export function formatBookData(
-  rawBook: any,
-  userRatings: any[] | null,
+export const formatBookData = (
+  book: any, 
+  userRatings: any[] | null, 
   userReactions: any[] | null
-): Book {
-  console.log('Formatting book data:', rawBook);
-  
-  // Get the active loan (most recent non-returned loan)
-  const activeLoan = rawBook.loans?.find((loan: any) => !loan.returned_at);
-  
-  // Calculate average rating
-  const ratings = rawBook.book_ratings || [];
-  const averageRating = ratings.length > 0
-    ? ratings.reduce((sum: number, r: any) => sum + r.rating, 0) / ratings.length
-    : null;
+): Book => {
+  const reactionCounts: { [key: string]: number } = {};
+  book.book_reactions?.forEach((r: { reaction: string }) => {
+    reactionCounts[r.reaction] = (reactionCounts[r.reaction] || 0) + 1;
+  });
 
-  // Count reactions
-  const reactions = rawBook.book_reactions?.reduce((acc: Record<string, number>, reaction: any) => {
-    acc[reaction.reaction] = (acc[reaction.reaction] || 0) + 1;
-    return acc;
-  }, {}) || {};
+  const userRating = userRatings?.find(r => r.book_id === book.id)?.rating;
 
-  // Get user's reactions if available
-  const userReactionsList = userReactions
-    ?.filter(r => r.book_id === rawBook.id)
-    ?.map(r => r.reaction) || [];
+  const bookUserReactions = userReactions
+    ?.filter(r => r.book_id === book.id)
+    .map(r => r.reaction);
 
-  const formattedBook: Book = {
-    id: rawBook.id,
-    title: rawBook.title,
-    author: rawBook.author,
-    imageUrl: rawBook.image_url,
-    lentTo: activeLoan?.lent_to || null,
-    averageRating: rawBook.average_rating || averageRating,
-    aiSummary: rawBook.ai_summary,
-    reactions: reactions,
-    userReactions: userReactionsList,
-    location: rawBook.location || 'Oslo 🇧🇻',
+  // Find the active loan (where returned_at is null)
+  const activeLoan = book.loans?.find((loan: any) => !loan.returned_at);
+
+  // Ensure location is one of the two valid options
+  const location = book.location === 'Stockholm 🇸🇪' ? 'Stockholm 🇸🇪' : 'Oslo 🇧🇻';
+
+  return {
+    id: book.id,
+    title: book.title,
+    author: book.author,
+    imageUrl: book.image_url,
+    lentTo: activeLoan ? activeLoan.lent_to : null,
+    loanDate: activeLoan ? activeLoan.created_at : null,
+    averageRating: book.average_rating,
+    aiSummary: book.ai_summary,
+    userRating,
+    reactions: reactionCounts,
+    userReactions: bookUserReactions || [],
+    location,
   };
-
-  console.log('Formatted book:', formattedBook);
-  return formattedBook;
-}
+};

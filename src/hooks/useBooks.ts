@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { Book } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
@@ -8,15 +8,14 @@ import {
   fetchBooks, 
   addBookToLibrary, 
   lendBookToUser, 
-  returnBookToLibrary,
-  deleteBook as deleteBookService
+  returnBookToLibrary 
 } from "@/services/bookService";
 
 export function useBooks(user: User | null) {
   const [books, setBooks] = useState<Book[]>([]);
   const { toast } = useToast();
 
-  const refreshBooks = useCallback(async () => {
+  const refreshBooks = async () => {
     try {
       const booksData = await fetchBooks(user?.id);
       setBooks(booksData);
@@ -28,7 +27,7 @@ export function useBooks(user: User | null) {
         variant: "destructive",
       });
     }
-  }, [user?.id, toast]);
+  };
 
   const addBook = async (title: string, author: string, imageUrl: string, location: 'Stockholm 🇸🇪' | 'Oslo 🇧🇻') => {
     try {
@@ -90,28 +89,7 @@ export function useBooks(user: User | null) {
     }
   };
 
-  const deleteBook = async (id: number) => {
-    try {
-      await deleteBookService(id);
-      setBooks(books.filter(book => book.id !== id));
-      toast({
-        title: "Success",
-        description: "Book has been deleted from the library.",
-      });
-    } catch (error) {
-      console.error('Error deleting book:', error);
-      toast({
-        title: "Error",
-        description: "Failed to delete book. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
-
   useEffect(() => {
-    if (!user) return; // Don't fetch books if there's no user
-    
-    console.log('Fetching books for user:', user.id);
     refreshBooks();
 
     // Subscribe to real-time changes
@@ -170,7 +148,7 @@ export function useBooks(user: User | null) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user, refreshBooks]); // Add refreshBooks to dependencies
+  }, [user]);
 
-  return { books, addBook, lendBook, returnBook, deleteBook };
+  return { books, addBook, lendBook, returnBook };
 }
