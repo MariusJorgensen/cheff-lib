@@ -17,11 +17,11 @@ interface LibraryHeaderProps {
 
 export function LibraryHeader({ userEmail, onSignOut }: LibraryHeaderProps) {
   return (
-    <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+    <div className="flex justify-between items-center">
       <h1 className="text-4xl font-bold bg-gradient-to-r from-[#E56962] to-[#3941E8] bg-clip-text text-transparent">
         cheff.lib
       </h1>
-      <div className="flex items-center gap-2 sm:gap-4">
+      <div className="flex items-center gap-4">
         <FeedbackDialog />
         <ThemeToggle />
         <DropdownMenu>

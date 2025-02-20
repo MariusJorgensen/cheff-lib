@@ -1,3 +1,4 @@
+
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "./ui/use-toast";
@@ -32,44 +33,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     refreshSession,
   } = useAuthState();
 
-  console.log("AuthProvider rendering", { 
-    isLoading, 
-    initializationComplete, 
-    session, 
-    user,
-    currentPath: window.location.pathname 
-  });
+  console.log("AuthProvider rendering", { isLoading, initializationComplete, session, user });
 
   useEffect(() => {
     let isMounted = true;
 
     const initialize = async () => {
-      if (!isMounted) return;
-
       try {
         console.log("Starting initialization");
         const freshSession = await refreshSession();
+        console.log("Fresh session received:", freshSession);
         
-        if (!isMounted) return;
-
-        // Always update initialization state regardless of session
-        setInitializationComplete(true);
-        setIsLoading(false);
-
-        if (!freshSession) {
-          console.log("No session found during initialization");
-          setSession(null);
-          setUser(null);
-          setIsApproved(false);
-          setIsAdmin(false);
+        if (!isMounted) {
+          console.log("Component unmounted during initialization");
           return;
         }
 
-        console.log("Setting session and user from fresh session");
-        setSession(freshSession);
-        setUser(freshSession.user);
-
-        if (freshSession.user) {
+        if (freshSession?.user) {
+          console.log("Setting session and user from fresh session");
+          setSession(freshSession);
+          setUser(freshSession.user);
+          
           console.log("Checking approval status for user:", freshSession.user.id);
           const { approved, isAdmin: isAdminUser } = await checkApprovalStatus(freshSession.user.id);
           console.log("Approval status received:", { approved, isAdminUser });
@@ -78,48 +62,63 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setIsApproved(approved);
             setIsAdmin(isAdminUser);
           }
+        } else {
+          console.log("No user in fresh session, clearing state");
+          setSession(null);
+          setUser(null);
+          setIsApproved(false);
+          setIsAdmin(false);
         }
       } catch (error) {
         console.error("Error during initialization:", error);
+        toast({
+          title: "Error",
+          description: "Failed to initialize session. Please try logging in again.",
+          variant: "destructive",
+        });
         if (isMounted) {
           setSession(null);
           setUser(null);
           setIsApproved(false);
           setIsAdmin(false);
+        }
+      } finally {
+        if (isMounted) {
+          console.log("Completing initialization");
           setInitializationComplete(true);
           setIsLoading(false);
-          
-          toast({
-            title: "Error",
-            description: "Failed to initialize session. Please try logging in again.",
-            variant: "destructive",
-          });
         }
       }
     };
 
+    console.log("Setting up auth subscriptions");
     initialize();
 
     const authSubscription = supabase.auth.onAuthStateChange(async (_event, newSession) => {
-      console.log("Auth state changed", { event: _event, session: newSession });
+      console.log("Auth state changed", { event: _event, newSession });
       
-      if (!isMounted) return;
+      if (!isMounted) {
+        console.log("Component unmounted during auth state change");
+        return;
+      }
       
       try {
-        setInitializationComplete(true);
-        setIsLoading(false);
-
         if (newSession?.user) {
           setSession(newSession);
           setUser(newSession.user);
           
+          console.log("Checking approval status after auth state change");
           const { approved, isAdmin: isAdminUser } = await checkApprovalStatus(newSession.user.id);
+          console.log("New approval status:", { approved, isAdminUser });
           
           if (isMounted) {
             setIsApproved(approved);
             setIsAdmin(isAdminUser);
+            setInitializationComplete(true);
+            setIsLoading(false);
           }
         } else {
+          console.log("No user in auth state change");
           if (isMounted) {
             setSession(null);
             setUser(null);
@@ -149,13 +148,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           filter: user ? `id=eq.${user.id}` : undefined
         },
         async (payload: RealtimePostgresChangesPayload<Profile>) => {
+          console.log('Profile changed:', payload);
           if (!isMounted || !user) return;
           
           if (payload.new && 'id' in payload.new && payload.new.id === user.id) {
             try {
+              console.log("Refreshing session after profile change");
               const freshSession = await refreshSession();
               if (freshSession?.user && isMounted) {
                 const { approved, isAdmin: isAdminUser } = await checkApprovalStatus(freshSession.user.id);
+                console.log("Updated approval status:", { approved, isAdminUser });
                 setIsApproved(approved);
                 setIsAdmin(isAdminUser);
               }
@@ -168,19 +170,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .subscribe();
 
     return () => {
+      console.log("Cleaning up auth subscriptions");
       isMounted = false;
       authSubscription.data.subscription.unsubscribe();
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [user?.id]);
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (isLoading) {
+        console.log("Spinner timeout reached, forcing completion");
+        setIsLoading(false);
+        setInitializationComplete(true);
+        // Show error toast if we had to force timeout
+        toast({
+          title: "Session Error",
+          description: "There was an issue loading your session. Please try logging in again.",
+          variant: "destructive",
+        });
+      }
+    }, 5000); // 5 second timeout
+
+    return () => clearTimeout(timeoutId);
+  }, [isLoading, setIsLoading, setInitializationComplete, toast]);
 
   useEffect(() => {
     if (!isLoading && initializationComplete) {
       const currentPath = window.location.pathname;
+      console.log("Navigation check", { currentPath, session, isLoading, initializationComplete });
       
       if (!session && currentPath !== "/auth") {
+        console.log("Redirecting to auth page");
         navigate("/auth", { replace: true });
       } else if (session && currentPath === "/auth") {
+        console.log("Redirecting to home page");
         navigate("/", { replace: true });
       }
     }
@@ -199,9 +223,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsApproved(false);
       setIsAdmin(false);
       
-      // Clear any localStorage data
-      localStorage.clear();
-      
       // Force navigation to auth page
       console.log("Redirecting to auth page after signout");
       await navigate("/auth", { replace: true });
@@ -219,6 +240,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   if (isLoading || !initializationComplete) {
+    console.log("Showing loading spinner", { isLoading, initializationComplete });
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-white"></div>

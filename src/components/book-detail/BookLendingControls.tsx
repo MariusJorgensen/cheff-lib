@@ -25,15 +25,15 @@ interface BookLendingControlsProps {
 
 export function BookLendingControls({ book, onLend, onReturn, onClose }: BookLendingControlsProps) {
   const [showReturnDialog, setShowReturnDialog] = useState(false);
-  const [showBorrowDialog, setShowBorrowDialog] = useState(false);
+  const [showLendDialog, setShowLendDialog] = useState(false);
   const { user, isAdmin } = useAuth();
   const { toast } = useToast();
 
-  const handleBorrowSubmit = async () => {
+  const handleLendSubmit = async () => {
     if (!user) {
       toast({
         title: "Error",
-        description: "You must be logged in to borrow books",
+        description: "You must be logged in to lend books",
         variant: "destructive",
       });
       return;
@@ -52,22 +52,21 @@ export function BookLendingControls({ book, onLend, onReturn, onClose }: BookLen
       const borrowerName = profile?.full_name || user.email;
       if (borrowerName) {
         onLend(book.id, borrowerName);
-        setShowBorrowDialog(false);
+        setShowLendDialog(false);
         onClose();
       }
     } catch (error) {
       console.error('Error getting user profile:', error);
       toast({
         title: "Error",
-        description: "Failed to process borrowing request. Please try again.",
+        description: "Failed to process lending request. Please try again.",
         variant: "destructive",
       });
     }
   };
 
-  // Check if the current user is the borrower
+  // Users can return books they borrowed, admins can return any book
   const isCurrentBorrower = user?.email?.toLowerCase() === book.lentTo?.toLowerCase();
-  // User can return if they're the borrower or if they're an admin
   const canReturnBook = isAdmin || isCurrentBorrower;
 
   return book.lentTo ? (
@@ -77,19 +76,12 @@ export function BookLendingControls({ book, onLend, onReturn, onClose }: BookLen
           Return Book
         </Button>
       )}
-      {!canReturnBook && (
-        <div className="text-sm text-muted-foreground text-center py-2">
-          Currently borrowed by {book.lentTo}
-        </div>
-      )}
       <AlertDialog open={showReturnDialog} onOpenChange={setShowReturnDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Return Book</AlertDialogTitle>
             <AlertDialogDescription>
-              {isAdmin && !isCurrentBorrower 
-                ? `Are you sure you want to return "${book.title}" borrowed by ${book.lentTo}?`
-                : `Are you sure you want to return "${book.title}"?`}
+              Are you sure you want to mark "{book.title}" as returned from {book.lentTo}?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -107,21 +99,21 @@ export function BookLendingControls({ book, onLend, onReturn, onClose }: BookLen
     </>
   ) : (
     <>
-      <Button variant="outline" onClick={() => setShowBorrowDialog(true)} className="w-full">
-        Borrow Book
+      <Button variant="outline" onClick={() => setShowLendDialog(true)} className="w-full">
+        Lend Book
       </Button>
-      <AlertDialog open={showBorrowDialog} onOpenChange={setShowBorrowDialog}>
+      <AlertDialog open={showLendDialog} onOpenChange={setShowLendDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Borrow Book</AlertDialogTitle>
+            <AlertDialogTitle>Lend Book</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to borrow "{book.title}"?
+              Are you sure you want to lend "{book.title}"?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleBorrowSubmit}>
-              Confirm Borrow
+            <AlertDialogAction onClick={handleLendSubmit}>
+              Confirm Loan
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
