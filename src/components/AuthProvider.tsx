@@ -40,7 +40,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const handleSession = async (currentSession: any) => {
       console.log("Handling session:", currentSession);
-      if (!mounted) return;
+      
+      if (!mounted) {
+        console.log("Component unmounted, skipping session handling");
+        return;
+      }
 
       try {
         if (currentSession?.user) {
@@ -50,78 +54,96 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           
           console.log("Checking approval status");
           const { approved, isAdmin: isAdminUser } = await checkApprovalStatus(currentSession.user.id);
-          if (!mounted) return;
+          
+          if (!mounted) {
+            console.log("Component unmounted during approval check");
+            return;
+          }
           
           console.log("Setting approval status:", { approved, isAdmin: isAdminUser });
           setIsApproved(approved);
           setIsAdmin(isAdminUser);
 
           if (window.location.pathname === '/auth') {
-            console.log("Redirecting to home");
+            console.log("Redirecting to home from auth page");
             navigate('/', { replace: true });
           }
         } else {
-          console.log("No session, clearing state");
+          console.log("No session found, clearing state");
           setSession(null);
           setUser(null);
           setIsApproved(false);
           setIsAdmin(false);
 
           if (window.location.pathname !== '/auth') {
-            console.log("Redirecting to auth");
+            console.log("Redirecting to auth page");
             navigate('/auth', { replace: true });
           }
         }
       } catch (error) {
         console.error("Error in handleSession:", error);
-      } finally {
-        if (mounted) {
-          console.log("Setting initialization complete");
-          setInitializationComplete(true);
-        }
+        if (!mounted) return;
+        
+        toast({
+          title: "Error",
+          description: "Failed to initialize session",
+          variant: "destructive",
+        });
+      }
+
+      if (mounted && !initializationComplete) {
+        console.log("Marking initialization as complete");
+        setInitializationComplete(true);
       }
     };
 
     const initialize = async () => {
-      if (!mounted) return;
+      console.log("Initializing auth state");
+      
+      if (!mounted) {
+        console.log("Component unmounted, skipping initialization");
+        return;
+      }
 
       try {
-        console.log("Getting initial session...");
-        const { data: { session: initialSession } } = await supabase.auth.getSession();
-        console.log("Initial session received:", initialSession);
+        const { data: { session: initialSession }, error } = await supabase.auth.getSession();
         
+        if (error) {
+          throw error;
+        }
+
+        console.log("Initial session received:", initialSession);
         await handleSession(initialSession);
       } catch (error) {
         console.error("Error during initialization:", error);
-        if (mounted) {
-          toast({
-            title: "Error",
-            description: "Failed to initialize session",
-            variant: "destructive",
-          });
-          setInitializationComplete(true);
-        }
+        if (!mounted) return;
+        
+        toast({
+          title: "Error",
+          description: "Failed to initialize session",
+          variant: "destructive",
+        });
+        setInitializationComplete(true);
       }
     };
 
-    // Set up auth subscription first
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
+    // Set up auth subscription
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, newSession) => {
       console.log("Auth state changed:", event, newSession);
       if (mounted) {
-        await handleSession(newSession);
+        handleSession(newSession);
       }
     });
 
-    // Then initialize
+    // Initialize auth state
     initialize();
 
-    // Clean up function
     return () => {
-      console.log("Cleaning up auth provider...");
+      console.log("Cleaning up auth provider");
       mounted = false;
       subscription.unsubscribe();
     };
-  }, [navigate, setSession, setUser, setIsApproved, setIsAdmin, setInitializationComplete]);
+  }, []);
 
   const signOut = async () => {
     try {

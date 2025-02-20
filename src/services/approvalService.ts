@@ -19,6 +19,7 @@ export async function checkApprovalStatus(userId: string) {
 
     if (adminError) {
       console.error('Error checking admin status:', adminError);
+      return { approved: !!profile?.is_approved, isAdmin: false };
     }
 
     return {
