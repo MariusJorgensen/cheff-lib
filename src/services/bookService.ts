@@ -20,12 +20,12 @@ export const fetchUserRatingsAndReactions = async (userId: string) => {
 export const fetchBooks = async (userId: string | undefined = undefined) => {
   console.log('Fetching books with userId:', userId);
   
-  // Fetch books with their active loans (if any)
+  // Fetch books and their related data using left joins
   const { data: booksData, error: booksError } = await supabase
     .from('books')
     .select(`
       *,
-      loans!inner (
+      loans (
         lent_to,
         returned_at,
         created_at
