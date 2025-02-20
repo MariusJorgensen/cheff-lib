@@ -33,7 +33,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     refreshSession,
   } = useAuthState();
 
-  console.log("AuthProvider rendering", { isLoading, initializationComplete, session, user });
+  console.log("AuthProvider rendering", { 
+    isLoading, 
+    initializationComplete, 
+    session, 
+    user,
+    currentPath: window.location.pathname 
+  });
 
   useEffect(() => {
     let isMounted = true;
