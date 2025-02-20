@@ -5,6 +5,7 @@ import { useToast } from "./ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { AuthContext } from "@/contexts/AuthContext";
 import { useAuthState } from "@/hooks/useAuthState";
+import { checkApprovalStatus } from "@/services/approvalService";
 import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 
 type Profile = {
