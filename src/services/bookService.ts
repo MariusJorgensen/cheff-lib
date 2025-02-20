@@ -30,19 +30,19 @@ export const fetchBooks = async (userId: string | undefined = undefined) => {
       ai_summary,
       location,
       loans (
-        lent_to,
         user_id,
         returned_at,
         created_at,
-        profiles:user_id (
+        lent_to,
+        profiles (
           full_name,
           email
         )
       ),
-      book_ratings!fk_book_ratings_book_id (
+      book_ratings (
         rating
       ),
-      book_reactions!fk_book_reactions_book_id (
+      book_reactions (
         reaction
       )
     `);
