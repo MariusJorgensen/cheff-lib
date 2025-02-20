@@ -117,6 +117,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, [navigate]);
 
+  const signOut = async () => {
+    try {
+      await supabase.auth.signOut();
+      setSession(null);
+      setUser(null);
+      setIsApproved(false);
+      setIsAdmin(false);
+      navigate("/auth", { replace: true });
+    } catch (error) {
+      console.error("Error signing out:", error);
+      toast({
+        title: "Error",
+        description: "Failed to sign out",
+        variant: "destructive",
+      });
+    }
+  };
+
   console.log("Auth provider state:", { initializationComplete, session, user });
 
   // Only show loading state during initial initialization
