@@ -33,7 +33,7 @@ export function BookLendingControls({ book, onLend, onReturn, onClose }: BookLen
     if (!user) {
       toast({
         title: "Error",
-        description: "You must be logged in to lend books",
+        description: "You must be logged in to borrow books",
         variant: "destructive",
       });
       return;
@@ -59,14 +59,16 @@ export function BookLendingControls({ book, onLend, onReturn, onClose }: BookLen
       console.error('Error getting user profile:', error);
       toast({
         title: "Error",
-        description: "Failed to process lending request. Please try again.",
+        description: "Failed to process borrowing request. Please try again.",
         variant: "destructive",
       });
     }
   };
 
   // Users can return books they borrowed, admins can return any book
-  const isCurrentBorrower = user?.email?.toLowerCase() === book.lentTo?.toLowerCase();
+  const currentUserEmail = user?.email?.toLowerCase() || '';
+  const bookLentTo = book.lentTo?.toLowerCase() || '';
+  const isCurrentBorrower = currentUserEmail === bookLentTo;
   const canReturnBook = isAdmin || isCurrentBorrower;
 
   return book.lentTo ? (
@@ -100,20 +102,20 @@ export function BookLendingControls({ book, onLend, onReturn, onClose }: BookLen
   ) : (
     <>
       <Button variant="outline" onClick={() => setShowLendDialog(true)} className="w-full">
-        Lend Book
+        Borrow Book
       </Button>
       <AlertDialog open={showLendDialog} onOpenChange={setShowLendDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Lend Book</AlertDialogTitle>
+            <AlertDialogTitle>Borrow Book</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to lend "{book.title}"?
+              Are you sure you want to borrow "{book.title}"?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleLendSubmit}>
-              Confirm Loan
+              Confirm Borrow
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
