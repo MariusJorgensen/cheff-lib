@@ -46,11 +46,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setSession(currentSession);
         setUser(currentSession.user);
         
-        const { approved, isAdmin: isAdminUser } = await checkApprovalStatus(currentSession.user.id);
-        if (!mounted) return;
-        
-        setIsApproved(approved);
-        setIsAdmin(isAdminUser);
+        try {
+          const { approved, isAdmin: isAdminUser } = await checkApprovalStatus(currentSession.user.id);
+          if (!mounted) return;
+          
+          setIsApproved(approved);
+          setIsAdmin(isAdminUser);
+        } catch (error) {
+          console.error("Error checking approval status:", error);
+        }
 
         if (window.location.pathname === '/auth') {
           navigate('/', { replace: true });
@@ -64,6 +68,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (window.location.pathname !== '/auth') {
           navigate('/auth', { replace: true });
         }
+      }
+
+      // Always complete initialization after handling session
+      if (mounted && !initializationComplete) {
+        console.log("Completing initialization after session handling");
+        setInitializationComplete(true);
       }
     };
 
@@ -82,16 +92,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             description: "Failed to initialize session",
             variant: "destructive",
           });
-        }
-      } finally {
-        if (mounted) {
-          console.log("Initialization complete");
+          // Ensure initialization completes even on error
           setInitializationComplete(true);
         }
       }
     };
 
-    // Set up auth subscription first
+    // Set up auth subscription
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
       console.log("Auth state changed:", event, newSession);
       if (mounted) {
@@ -99,61 +106,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     });
 
-    // Then initialize
+    // Initialize
     initialize();
 
-    // Set up profile changes subscription
-    const channel = supabase.channel('profile-changes');
-    
-    const profileSubscription = channel
-      .on<Profile>(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'profiles',
-          filter: user ? `id=eq.${user.id}` : undefined
-        },
-        async (payload: RealtimePostgresChangesPayload<Profile>) => {
-          if (!user || !mounted) return;
-          
-          if (payload.new && 'id' in payload.new && payload.new.id === user.id) {
-            const freshSession = await refreshSession();
-            if (freshSession?.user && mounted) {
-              const { approved, isAdmin: isAdminUser } = await checkApprovalStatus(freshSession.user.id);
-              setIsApproved(approved);
-              setIsAdmin(isAdminUser);
-            }
-          }
-        }
-      )
-      .subscribe();
-
+    // Clean up function
     return () => {
       console.log("Cleaning up auth provider...");
       mounted = false;
       subscription.unsubscribe();
-      supabase.removeChannel(channel);
     };
-  }, []);
+  }, [navigate]);
 
-  const signOut = async () => {
-    try {
-      await supabase.auth.signOut();
-      setSession(null);
-      setUser(null);
-      setIsApproved(false);
-      setIsAdmin(false);
-      navigate("/auth", { replace: true });
-    } catch (error) {
-      console.error("Error signing out:", error);
-      toast({
-        title: "Error",
-        description: "Failed to sign out",
-        variant: "destructive",
-      });
-    }
-  };
+  console.log("Auth provider state:", { initializationComplete, session, user });
 
   // Only show loading state during initial initialization
   if (!initializationComplete) {
@@ -165,7 +129,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     );
   }
 
-  console.log("Rendering auth provider with context:", { session, user, isApproved, isAdmin });
   return (
     <AuthContext.Provider value={{ session, user, isApproved, isAdmin, signOut }}>
       {children}
