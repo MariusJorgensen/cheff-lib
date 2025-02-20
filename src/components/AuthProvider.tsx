@@ -36,27 +36,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Initialize auth state
   useEffect(() => {
     let mounted = true;
+    setIsLoading(true); // Ensure we start with loading state
 
     const initialize = async () => {
       try {
         const { data: { session: initialSession } } = await supabase.auth.getSession();
         
-        if (mounted) {
-          if (initialSession?.user) {
-            setSession(initialSession);
-            setUser(initialSession.user);
-            
-            const { approved, isAdmin: isAdminUser } = await checkApprovalStatus(initialSession.user.id);
-            setIsApproved(approved);
-            setIsAdmin(isAdminUser);
-          } else {
-            setSession(null);
-            setUser(null);
-            setIsApproved(false);
-            setIsAdmin(false);
-          }
-          setIsLoading(false);
-          setInitializationComplete(true);
+        if (!mounted) return;
+
+        if (initialSession?.user) {
+          setSession(initialSession);
+          setUser(initialSession.user);
+          
+          const { approved, isAdmin: isAdminUser } = await checkApprovalStatus(initialSession.user.id);
+          if (!mounted) return;
+          
+          setIsApproved(approved);
+          setIsAdmin(isAdminUser);
+        } else {
+          setSession(null);
+          setUser(null);
+          setIsApproved(false);
+          setIsAdmin(false);
         }
       } catch (error) {
         console.error("Error during initialization:", error);
@@ -66,6 +67,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             description: "Failed to initialize session",
             variant: "destructive",
           });
+        }
+      } finally {
+        if (mounted) {
           setIsLoading(false);
           setInitializationComplete(true);
         }
@@ -78,12 +82,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
       console.log("Auth state changed:", { event, newSession });
       
-      if (mounted) {
+      if (!mounted) return;
+      setIsLoading(true);
+
+      try {
         if (newSession?.user) {
           setSession(newSession);
           setUser(newSession.user);
           
           const { approved, isAdmin: isAdminUser } = await checkApprovalStatus(newSession.user.id);
+          if (!mounted) return;
+          
           setIsApproved(approved);
           setIsAdmin(isAdminUser);
         } else {
@@ -92,8 +101,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setIsApproved(false);
           setIsAdmin(false);
         }
-        setIsLoading(false);
-        setInitializationComplete(true);
+      } catch (error) {
+        console.error("Error during auth state change:", error);
+      } finally {
+        if (mounted) {
+          setIsLoading(false);
+          setInitializationComplete(true);
+        }
       }
     });
 
@@ -114,7 +128,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           
           if (payload.new && 'id' in payload.new && payload.new.id === user.id) {
             const freshSession = await refreshSession();
-            if (freshSession?.user) {
+            if (freshSession?.user && mounted) {
               const { approved, isAdmin: isAdminUser } = await checkApprovalStatus(freshSession.user.id);
               setIsApproved(approved);
               setIsAdmin(isAdminUser);
@@ -137,21 +151,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const currentPath = window.location.pathname;
       
       if (!session && currentPath !== "/auth") {
-        navigate("/auth");
+        navigate("/auth", { replace: true });
       } else if (session && currentPath === "/auth") {
-        navigate("/");
+        navigate("/", { replace: true });
       }
     }
   }, [session, isLoading, initializationComplete, navigate]);
 
   const signOut = async () => {
     try {
+      setIsLoading(true);
       await supabase.auth.signOut();
       setSession(null);
       setUser(null);
       setIsApproved(false);
       setIsAdmin(false);
-      navigate("/auth");
+      navigate("/auth", { replace: true });
     } catch (error) {
       console.error("Error signing out:", error);
       toast({
@@ -159,10 +174,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         description: "Failed to sign out",
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  if (isLoading || !initializationComplete) {
+  // Only show loading state for initial load
+  if (!initializationComplete) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-white"></div>
