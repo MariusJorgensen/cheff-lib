@@ -65,8 +65,9 @@ export function BookLendingControls({ book, onLend, onReturn, onClose }: BookLen
     }
   };
 
-  // Only admins can return books
-  const canReturnBook = isAdmin;
+  // Users can return books they borrowed, admins can return any book
+  const isCurrentBorrower = user?.email?.toLowerCase() === book.lentTo?.toLowerCase();
+  const canReturnBook = isAdmin || isCurrentBorrower;
 
   return book.lentTo ? (
     <>
