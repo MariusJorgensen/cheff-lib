@@ -35,43 +35,45 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Initialize auth state
   useEffect(() => {
+    console.log("Starting auth initialization...");
     let mounted = true;
 
-    const initialize = async () => {
+    const handleSession = async (currentSession: any) => {
+      console.log("Handling session:", currentSession);
       if (!mounted) return;
 
-      try {
-        const { data: { session: initialSession } } = await supabase.auth.getSession();
+      if (currentSession?.user) {
+        setSession(currentSession);
+        setUser(currentSession.user);
         
+        const { approved, isAdmin: isAdminUser } = await checkApprovalStatus(currentSession.user.id);
         if (!mounted) return;
+        
+        setIsApproved(approved);
+        setIsAdmin(isAdminUser);
 
-        if (initialSession?.user) {
-          setSession(initialSession);
-          setUser(initialSession.user);
-          
-          const { approved, isAdmin: isAdminUser } = await checkApprovalStatus(initialSession.user.id);
-          if (!mounted) return;
-          
-          setIsApproved(approved);
-          setIsAdmin(isAdminUser);
-
-          if (window.location.pathname === '/auth') {
-            navigate('/', { replace: true });
-          }
-        } else {
-          setSession(null);
-          setUser(null);
-          setIsApproved(false);
-          setIsAdmin(false);
-
-          if (window.location.pathname !== '/auth') {
-            navigate('/auth', { replace: true });
-          }
+        if (window.location.pathname === '/auth') {
+          navigate('/', { replace: true });
         }
+      } else {
+        setSession(null);
+        setUser(null);
+        setIsApproved(false);
+        setIsAdmin(false);
 
-        if (mounted) {
-          setInitializationComplete(true);
+        if (window.location.pathname !== '/auth') {
+          navigate('/auth', { replace: true });
         }
+      }
+    };
+
+    const initialize = async () => {
+      try {
+        console.log("Getting initial session...");
+        const { data: { session: initialSession } } = await supabase.auth.getSession();
+        console.log("Initial session received:", initialSession);
+        
+        await handleSession(initialSession);
       } catch (error) {
         console.error("Error during initialization:", error);
         if (mounted) {
@@ -80,47 +82,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             description: "Failed to initialize session",
             variant: "destructive",
           });
-          setInitializationComplete(true); // Even on error, we should complete initialization
+        }
+      } finally {
+        if (mounted) {
+          console.log("Initialization complete");
+          setInitializationComplete(true);
         }
       }
     };
 
-    initialize();
-
-    // Set up auth subscription
+    // Set up auth subscription first
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
-      console.log("Auth state changed:", { event, newSession });
-      
-      if (!mounted) return;
-
-      try {
-        if (newSession?.user) {
-          setSession(newSession);
-          setUser(newSession.user);
-          
-          const { approved, isAdmin: isAdminUser } = await checkApprovalStatus(newSession.user.id);
-          if (!mounted) return;
-          
-          setIsApproved(approved);
-          setIsAdmin(isAdminUser);
-
-          if (window.location.pathname === '/auth') {
-            navigate('/', { replace: true });
-          }
-        } else {
-          setSession(null);
-          setUser(null);
-          setIsApproved(false);
-          setIsAdmin(false);
-
-          if (window.location.pathname !== '/auth') {
-            navigate('/auth', { replace: true });
-          }
-        }
-      } catch (error) {
-        console.error("Error during auth state change:", error);
+      console.log("Auth state changed:", event, newSession);
+      if (mounted) {
+        await handleSession(newSession);
       }
     });
+
+    // Then initialize
+    initialize();
 
     // Set up profile changes subscription
     const channel = supabase.channel('profile-changes');
@@ -150,6 +130,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .subscribe();
 
     return () => {
+      console.log("Cleaning up auth provider...");
       mounted = false;
       subscription.unsubscribe();
       supabase.removeChannel(channel);
@@ -176,6 +157,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Only show loading state during initial initialization
   if (!initializationComplete) {
+    console.log("Showing loading spinner...");
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-white"></div>
@@ -183,6 +165,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     );
   }
 
+  console.log("Rendering auth provider with context:", { session, user, isApproved, isAdmin });
   return (
     <AuthContext.Provider value={{ session, user, isApproved, isAdmin, signOut }}>
       {children}
