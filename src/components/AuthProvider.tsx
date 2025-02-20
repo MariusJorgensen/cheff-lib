@@ -35,29 +35,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Initialize auth state
   useEffect(() => {
+    let mounted = true;
+
     const initialize = async () => {
       try {
-        setIsLoading(true);
         const { data: { session: initialSession } } = await supabase.auth.getSession();
         
-        if (initialSession?.user) {
-          setSession(initialSession);
-          setUser(initialSession.user);
-          
-          const { approved, isAdmin: isAdminUser } = await checkApprovalStatus(initialSession.user.id);
-          setIsApproved(approved);
-          setIsAdmin(isAdminUser);
+        if (mounted) {
+          if (initialSession?.user) {
+            setSession(initialSession);
+            setUser(initialSession.user);
+            
+            const { approved, isAdmin: isAdminUser } = await checkApprovalStatus(initialSession.user.id);
+            setIsApproved(approved);
+            setIsAdmin(isAdminUser);
+          } else {
+            setSession(null);
+            setUser(null);
+            setIsApproved(false);
+            setIsAdmin(false);
+          }
+          setIsLoading(false);
+          setInitializationComplete(true);
         }
       } catch (error) {
         console.error("Error during initialization:", error);
-        toast({
-          title: "Error",
-          description: "Failed to initialize session",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
-        setInitializationComplete(true);
+        if (mounted) {
+          toast({
+            title: "Error",
+            description: "Failed to initialize session",
+            variant: "destructive",
+          });
+          setIsLoading(false);
+          setInitializationComplete(true);
+        }
       }
     };
 
@@ -67,21 +78,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
       console.log("Auth state changed:", { event, newSession });
       
-      if (newSession?.user) {
-        setSession(newSession);
-        setUser(newSession.user);
-        
-        const { approved, isAdmin: isAdminUser } = await checkApprovalStatus(newSession.user.id);
-        setIsApproved(approved);
-        setIsAdmin(isAdminUser);
-      } else {
-        setSession(null);
-        setUser(null);
-        setIsApproved(false);
-        setIsAdmin(false);
+      if (mounted) {
+        if (newSession?.user) {
+          setSession(newSession);
+          setUser(newSession.user);
+          
+          const { approved, isAdmin: isAdminUser } = await checkApprovalStatus(newSession.user.id);
+          setIsApproved(approved);
+          setIsAdmin(isAdminUser);
+        } else {
+          setSession(null);
+          setUser(null);
+          setIsApproved(false);
+          setIsAdmin(false);
+        }
+        setIsLoading(false);
+        setInitializationComplete(true);
       }
-      setIsLoading(false);
-      setInitializationComplete(true);
     });
 
     // Set up profile changes subscription
@@ -97,7 +110,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           filter: user ? `id=eq.${user.id}` : undefined
         },
         async (payload: RealtimePostgresChangesPayload<Profile>) => {
-          if (!user) return;
+          if (!user || !mounted) return;
           
           if (payload.new && 'id' in payload.new && payload.new.id === user.id) {
             const freshSession = await refreshSession();
@@ -112,6 +125,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .subscribe();
 
     return () => {
+      mounted = false;
       subscription.unsubscribe();
       supabase.removeChannel(channel);
     };
@@ -123,9 +137,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const currentPath = window.location.pathname;
       
       if (!session && currentPath !== "/auth") {
-        navigate("/auth", { replace: true });
+        navigate("/auth");
       } else if (session && currentPath === "/auth") {
-        navigate("/", { replace: true });
+        navigate("/");
       }
     }
   }, [session, isLoading, initializationComplete, navigate]);
@@ -137,7 +151,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(null);
       setIsApproved(false);
       setIsAdmin(false);
-      navigate("/auth", { replace: true });
+      navigate("/auth");
     } catch (error) {
       console.error("Error signing out:", error);
       toast({
