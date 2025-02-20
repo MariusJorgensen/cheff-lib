@@ -69,13 +69,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "book_comments_book_id_fkey"
-            columns: ["book_id"]
-            isOneToOne: false
-            referencedRelation: "books"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "book_comments_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
@@ -83,7 +76,7 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "fk_book_comments_book"
+            foreignKeyName: "fk_book_comments_book_id"
             columns: ["book_id"]
             isOneToOne: false
             referencedRelation: "books"
@@ -115,13 +108,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "book_ratings_book_id_fkey"
-            columns: ["book_id"]
-            isOneToOne: false
-            referencedRelation: "books"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "book_ratings_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
@@ -129,7 +115,7 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "fk_book_ratings_book"
+            foreignKeyName: "fk_book_ratings_book_id"
             columns: ["book_id"]
             isOneToOne: false
             referencedRelation: "books"
@@ -161,13 +147,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "book_reactions_book_id_fkey"
-            columns: ["book_id"]
-            isOneToOne: false
-            referencedRelation: "books"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "book_reactions_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
@@ -175,7 +154,7 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "fk_book_reactions_book"
+            foreignKeyName: "fk_book_reactions_book_id"
             columns: ["book_id"]
             isOneToOne: false
             referencedRelation: "books"

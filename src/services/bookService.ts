@@ -34,10 +34,10 @@ export const fetchBooks = async (userId: string | undefined = undefined) => {
         returned_at,
         created_at
       ),
-      book_ratings (
+      book_ratings!fk_book_ratings_book_id (
         rating
       ),
-      book_reactions (
+      book_reactions!fk_book_reactions_book_id (
         reaction
       )
     `);
