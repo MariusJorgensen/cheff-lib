@@ -41,7 +41,6 @@ export function useBooks(user: User | null) {
   ) => {
     try {
       await addBookToLibrary(title, author, imageUrl, location, bookDescription, authorDescription);
-      // Let realtime handle the update
       toast({
         title: "Success",
         description: `${title} has been added to the library.`,
@@ -59,7 +58,6 @@ export function useBooks(user: User | null) {
   const lendBook = async (id: number, borrowerName: string) => {
     try {
       await lendBookToUser(id, borrowerName);
-      // Let realtime handle the update
       toast({
         title: "Success",
         description: `Book has been lent successfully.`,
@@ -77,7 +75,6 @@ export function useBooks(user: User | null) {
   const returnBook = async (id: number) => {
     try {
       await returnBookToLibrary(id);
-      // Let realtime handle the update
       toast({
         title: "Success",
         description: "Book has been returned to the library.",
@@ -93,22 +90,26 @@ export function useBooks(user: User | null) {
   };
 
   useEffect(() => {
-    console.log('Setting up realtime subscriptions');
-    
+    if (!user) {
+      setBooks([]);
+      return;
+    }
+
+    console.log('Setting up realtime subscriptions for user:', user.id);
     refreshBooks();
 
-    // Subscribe to real-time changes
+    // Create a single channel for both books and loans changes
     const channel = supabase
       .channel('book-changes')
       .on(
         'postgres_changes',
-        {
+        { 
           event: '*',
           schema: 'public',
-          table: 'books'
+          table: 'books',
         },
-        (payload) => {
-          console.log('Books table changed:', payload);
+        () => {
+          console.log('Books table changed, refreshing data...');
           refreshBooks();
         }
       )
@@ -117,18 +118,21 @@ export function useBooks(user: User | null) {
         {
           event: '*',
           schema: 'public',
-          table: 'loans'
+          table: 'loans',
         },
-        (payload) => {
-          console.log('Loans table changed:', payload);
+        () => {
+          console.log('Loans table changed, refreshing data...');
           refreshBooks();
         }
       )
-      .subscribe(status => {
+      .subscribe((status) => {
         console.log('Realtime subscription status:', status);
+        if (status === 'SUBSCRIBED') {
+          console.log('Successfully subscribed to real-time changes');
+        }
       });
 
-    // Cleanup subscription on unmount
+    // Cleanup subscription on unmount or user change
     return () => {
       console.log('Cleaning up realtime subscriptions');
       supabase.removeChannel(channel);
