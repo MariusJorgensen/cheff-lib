@@ -19,6 +19,7 @@ export function useBooks(user: User | null) {
     try {
       console.log('Refreshing books with user:', user?.id);
       const booksData = await fetchBooks(user?.id);
+      console.log('Refreshed books data:', booksData);
       setBooks(booksData);
     } catch (error) {
       console.error('Error fetching books:', error);
@@ -39,8 +40,8 @@ export function useBooks(user: User | null) {
     authorDescription?: string
   ) => {
     try {
-      const newBook = await addBookToLibrary(title, author, imageUrl, location, bookDescription, authorDescription);
-      setBooks([...books, newBook]);
+      await addBookToLibrary(title, author, imageUrl, location, bookDescription, authorDescription);
+      // Let realtime handle the update
       toast({
         title: "Success",
         description: `${title} has been added to the library.`,
@@ -58,10 +59,10 @@ export function useBooks(user: User | null) {
   const lendBook = async (id: number, borrowerName: string) => {
     try {
       await lendBookToUser(id, borrowerName);
-      // Don't update local state, let the realtime subscription handle it
+      // Let realtime handle the update
       toast({
         title: "Success",
-        description: `Book has been lent to ${borrowerName}.`,
+        description: `Book has been lent successfully.`,
       });
     } catch (error) {
       console.error('Error lending book:', error);
@@ -76,7 +77,7 @@ export function useBooks(user: User | null) {
   const returnBook = async (id: number) => {
     try {
       await returnBookToLibrary(id);
-      // Don't update local state, let the realtime subscription handle it
+      // Let realtime handle the update
       toast({
         title: "Success",
         description: "Book has been returned to the library.",
@@ -92,7 +93,21 @@ export function useBooks(user: User | null) {
   };
 
   useEffect(() => {
-    console.log('Setting up realtime subscriptions and initial fetch');
+    console.log('Setting up realtime subscriptions');
+    
+    // Enable realtime for the tables
+    const enableRealtimeQuery = async () => {
+      await supabase.rpc('extensions.enable_realtime', {
+        relation: 'books',
+        enable: true
+      });
+      await supabase.rpc('extensions.enable_realtime', {
+        relation: 'loans',
+        enable: true
+      });
+    };
+
+    enableRealtimeQuery();
     refreshBooks();
 
     // Subscribe to real-time changes
@@ -118,35 +133,13 @@ export function useBooks(user: User | null) {
           table: 'loans'
         },
         (payload) => {
-          console.log('Loans changed:', payload);
+          console.log('Loans table changed:', payload);
           refreshBooks();
         }
       )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'book_ratings'
-        },
-        (payload) => {
-          console.log('Ratings changed:', payload);
-          refreshBooks();
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'book_reactions'
-        },
-        (payload) => {
-          console.log('Reactions changed:', payload);
-          refreshBooks();
-        }
-      )
-      .subscribe();
+      .subscribe(status => {
+        console.log('Realtime subscription status:', status);
+      });
 
     // Cleanup subscription on unmount
     return () => {
