@@ -26,9 +26,14 @@ export function BookImageSection({ book }: BookImageSectionProps) {
         }}
       />
       <div className="flex-1 space-y-4">
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <BookOpen className="h-4 w-4" />
-          <span>{book.author}</span>
+        <div className="space-y-1">
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <BookOpen className="h-4 w-4" />
+            <span>{book.author}</span>
+          </div>
+          <div className="text-sm text-muted-foreground/60 pl-6">
+            Added by {book.addedBy || 'Unknown'}
+          </div>
         </div>
 
         <Accordion type="single" collapsible className="w-full">
