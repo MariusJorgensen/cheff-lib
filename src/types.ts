@@ -7,6 +7,7 @@ export interface Book {
   imageUrl: string;
   averageRating: number | null;
   aiSummary: string | null;
+  addedBy?: string | null;
   userRating?: number | null;
   reactions?: { [key: string]: number };
   userReactions?: string[];
