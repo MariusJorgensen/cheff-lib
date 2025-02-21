@@ -159,7 +159,7 @@ export function AddBookDialog({ onAddBook }: AddBookDialogProps) {
         });
         const captureButton = document.createElement('button');
         captureButton.textContent = 'Capture';
-        captureButton.className = 'fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-primary text-white px-4 py-2 rounded-full z-[60]';
+        captureButton.className = 'fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-primary text-white px-6 py-3 rounded-full z-[60] text-lg font-semibold shadow-lg';
         document.body.appendChild(captureButton);
 
         captureButton.onclick = async () => {
@@ -208,7 +208,11 @@ export function AddBookDialog({ onAddBook }: AddBookDialogProps) {
         </div>
         <div class="absolute inset-0 bg-black bg-opacity-50"></div>
         <div class="absolute inset-0 flex items-center justify-center">
-          <div class="w-64 h-32 border-2 border-white rounded-lg bg-transparent"></div>
+          <div class="w-64 h-32 border-2 border-white rounded-lg bg-transparent">
+            <div class="absolute inset-0 flex items-center justify-center text-white text-sm">
+              Center the barcode here
+            </div>
+          </div>
         </div>
       `;
 
