@@ -39,9 +39,8 @@ export function BookLendingControls({ book, onLend, onReturn, onClose }: BookLen
     }
 
     try {
-      onLend(book.id, user.id);
+      await onLend(book.id, user.id);
       setShowLendDialog(false);
-      onClose();
     } catch (error) {
       console.error('Error processing loan:', error);
       toast({
@@ -52,11 +51,10 @@ export function BookLendingControls({ book, onLend, onReturn, onClose }: BookLen
     }
   };
 
-  const handleReturnSubmit = () => {
+  const handleReturnSubmit = async () => {
     try {
-      onReturn(book.id);
+      await onReturn(book.id);
       setShowReturnDialog(false);
-      onClose();
     } catch (error) {
       console.error('Error returning book:', error);
       toast({
@@ -89,7 +87,7 @@ export function BookLendingControls({ book, onLend, onReturn, onClose }: BookLen
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => setShowReturnDialog(false)}>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleReturnSubmit}>
               Confirm Return
             </AlertDialogAction>
@@ -111,7 +109,7 @@ export function BookLendingControls({ book, onLend, onReturn, onClose }: BookLen
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => setShowLendDialog(false)}>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleLendSubmit}>
               Confirm Borrow
             </AlertDialogAction>
