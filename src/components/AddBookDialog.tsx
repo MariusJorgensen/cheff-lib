@@ -99,7 +99,8 @@ export function AddBookDialog({ onAddBook }: AddBookDialogProps) {
             if (result) {
               const isbn = result.getText();
               
-              codeReader.reset();
+              // Clean up
+              codeReader.stopStreams(); // Changed from reset() to stopStreams()
               const videoPreview = document.querySelector('.barcode-video-preview');
               const closeButton = document.querySelector('.barcode-close-button');
               if (videoPreview) document.body.removeChild(videoPreview);
@@ -131,8 +132,9 @@ export function AddBookDialog({ onAddBook }: AddBookDialogProps) {
         });
       }
 
+      // Handle close button click
       closeButton.onclick = () => {
-        codeReader.reset();
+        codeReader.stopStreams(); // Changed from reset() to stopStreams()
         const videoPreview = document.querySelector('.barcode-video-preview');
         const closeButton = document.querySelector('.barcode-close-button');
         if (videoPreview) document.body.removeChild(videoPreview);
