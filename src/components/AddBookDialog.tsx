@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -59,10 +58,9 @@ export function AddBookDialog({ onAddBook }: AddBookDialogProps) {
       
       const video = document.createElement('video');
       video.srcObject = stream;
-      video.setAttribute('playsinline', 'true'); // Required for iOS
+      video.setAttribute('playsinline', 'true');
       await video.play();
 
-      // Create a canvas that matches the video dimensions
       const canvas = document.createElement('canvas');
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
@@ -72,10 +70,21 @@ export function AddBookDialog({ onAddBook }: AddBookDialogProps) {
         throw new Error('Could not get canvas context');
       }
 
-      // Try to use the Barcode Detection API if available
       if ('BarcodeDetector' in window) {
         const barcodeDetector = new (window as any).BarcodeDetector({
-          formats: ['ean_13', 'ean_8', 'isbn']
+          formats: [
+            'qr_code',
+            'ean_13',
+            'ean_8',
+            'upc_a',
+            'upc_e',
+            'code_128',
+            'code_39',
+            'code_93',
+            'data_matrix',
+            'itf',
+            'isbn'
+          ]
         });
 
         const detectCode = async () => {
@@ -84,12 +93,12 @@ export function AddBookDialog({ onAddBook }: AddBookDialogProps) {
             return;
           }
 
-          // Draw the current video frame
           ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
           
           try {
             const barcodes = await barcodeDetector.detect(canvas);
             if (barcodes.length > 0) {
+              console.log('Detected barcodes:', barcodes); // Debug log
               const isbn = barcodes[0].rawValue;
               
               // Clean up
@@ -108,19 +117,28 @@ export function AddBookDialog({ onAddBook }: AddBookDialogProps) {
                 description: `ISBN: ${isbn}`,
               });
             } else {
-              // Continue scanning
-              requestAnimationFrame(detectCode);
+              // Continue scanning with a slight delay to prevent overwhelming the CPU
+              setTimeout(() => {
+                if (isScanning) {
+                  requestAnimationFrame(detectCode);
+                }
+              }, 100);
             }
           } catch (error) {
             console.error('Barcode detection error:', error);
-            requestAnimationFrame(detectCode);
+            if (isScanning) {
+              requestAnimationFrame(detectCode);
+            }
           }
         };
 
-        // Start the detection loop
+        // Start detection loop
         detectCode();
+        
+        // Add a debug message to confirm API is available
+        console.log('BarcodeDetector API is available');
       } else {
-        // Fallback to manual capture
+        console.log('BarcodeDetector API is not available, falling back to manual capture');
         const captureButton = document.createElement('button');
         captureButton.textContent = 'Capture';
         captureButton.className = 'fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-primary text-white px-4 py-2 rounded-full z-[60]';
@@ -155,19 +173,15 @@ export function AddBookDialog({ onAddBook }: AddBookDialogProps) {
         };
       }
 
-      // Show the video feed with scanning interface
       const videoPreview = document.createElement('div');
       videoPreview.className = 'barcode-video-preview fixed inset-0 bg-black flex items-center justify-center z-50';
       
-      // Create a container for the video and scanning overlay
       const container = document.createElement('div');
       container.className = 'relative w-full h-full';
       
-      // Add a scanning line animation
       const scanLine = document.createElement('div');
       scanLine.className = 'absolute left-0 right-0 h-0.5 bg-red-500 z-[51] animate-scan';
       
-      // Add scanning frame overlay
       const overlay = document.createElement('div');
       overlay.className = 'absolute inset-0 z-[51]';
       overlay.innerHTML = `
@@ -180,7 +194,6 @@ export function AddBookDialog({ onAddBook }: AddBookDialogProps) {
         </div>
       `;
 
-      // Style the video element
       video.className = 'w-full h-full object-cover';
       
       container.appendChild(video);
@@ -189,7 +202,6 @@ export function AddBookDialog({ onAddBook }: AddBookDialogProps) {
       videoPreview.appendChild(container);
       document.body.appendChild(videoPreview);
 
-      // Add close button
       const closeButton = document.createElement('button');
       closeButton.textContent = '×';
       closeButton.className = 'barcode-close-button fixed top-4 right-4 text-white text-4xl z-[52] w-10 h-10 flex items-center justify-center rounded-full bg-black bg-opacity-50 hover:bg-opacity-75';
@@ -204,7 +216,6 @@ export function AddBookDialog({ onAddBook }: AddBookDialogProps) {
       };
       document.body.appendChild(closeButton);
 
-      // Add scanning animation styles
       const style = document.createElement('style');
       style.textContent = `
         @keyframes scan {
@@ -246,7 +257,6 @@ export function AddBookDialog({ onAddBook }: AddBookDialogProps) {
           description: "Basic information has been filled. Generating descriptions...",
         });
 
-        // Wait for descriptions
         if (bookData.bookDescription && bookData.authorDescription) {
           setBookDescription(bookData.bookDescription);
           setAuthorDescription(bookData.authorDescription);
