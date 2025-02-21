@@ -29,6 +29,9 @@ export const formatBookData = (
     loanDate = activeLoan.created_at;
   }
 
+  // Get the name of the user who added the book
+  const addedBy = book.profiles?.full_name || book.profiles?.email || 'Unknown';
+
   // Ensure location is one of the two valid options
   const location = book.location === 'Stockholm 🇸🇪' ? 'Stockholm 🇸🇪' : 'Oslo 🇧🇻';
 
@@ -48,5 +51,6 @@ export const formatBookData = (
     loans: book.loans,
     bookDescription: book.book_description,
     authorDescription: book.author_description,
+    addedBy
   };
 };

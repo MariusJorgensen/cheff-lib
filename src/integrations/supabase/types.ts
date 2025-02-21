@@ -164,6 +164,7 @@ export type Database = {
       }
       books: {
         Row: {
+          added_by_user_id: string | null
           ai_summary: string | null
           author: string
           author_description: string | null
@@ -177,6 +178,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          added_by_user_id?: string | null
           ai_summary?: string | null
           author: string
           author_description?: string | null
@@ -190,6 +192,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          added_by_user_id?: string | null
           ai_summary?: string | null
           author?: string
           author_description?: string | null
@@ -202,7 +205,15 @@ export type Database = {
           title?: string
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "books_added_by_user_id_fkey"
+            columns: ["added_by_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       loans: {
         Row: {
