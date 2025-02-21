@@ -29,6 +29,8 @@ export const fetchBooks = async (userId: string | undefined = undefined) => {
       average_rating,
       ai_summary,
       location,
+      book_description,
+      author_description,
       loans (
         user_id,
         returned_at,
