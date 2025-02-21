@@ -21,17 +21,17 @@ export function BookCard({ book, onLend, onReturn }: BookCardProps) {
 
   return (
     <>
-      <Card className="glass-card cursor-pointer transition-transform hover:scale-105 h-[440px] flex flex-col">
+      <Card 
+        className="glass-card cursor-pointer transition-transform hover:scale-105 h-[440px] flex flex-col"
+        onClick={() => setShowDetailDialog(true)}
+      >
         <div className="relative">
           <div className="absolute top-2 right-2 z-10">
             <Badge variant={book.lentTo ? "destructive" : "secondary"}>
               {book.lentTo ? "On Loan" : "Available"}
             </Badge>
           </div>
-          <div 
-            className="h-48 w-full overflow-hidden rounded-t-lg" 
-            onClick={() => setShowDetailDialog(true)}
-          >
+          <div className="h-48 w-full overflow-hidden rounded-t-lg">
             <img
               src={book.imageUrl}
               alt={book.title}
