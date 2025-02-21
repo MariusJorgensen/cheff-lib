@@ -51,6 +51,7 @@ export const formatBookData = (
     loans: book.loans,
     bookDescription: book.book_description,
     authorDescription: book.author_description,
-    addedBy
+    addedBy,
+    bookType: book.book_type || 'non-fiction' // Add the bookType field with a default value
   };
 };
