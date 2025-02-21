@@ -48,6 +48,21 @@ export function AddBookDialog({ onAddBook }: AddBookDialogProps) {
   const [isScanning, setIsScanning] = useState(false);
   const { toast } = useToast();
 
+  const cleanupScanner = (codeReader: BrowserMultiFormatReader) => {
+    const videoPreview = document.querySelector('.barcode-video-preview');
+    const closeButton = document.querySelector('.barcode-close-button');
+    if (videoPreview) document.body.removeChild(videoPreview);
+    if (closeButton) document.body.removeChild(closeButton);
+    
+    // Stop the video stream
+    const videoElement = document.querySelector('video');
+    if (videoElement && videoElement.srcObject) {
+      const stream = videoElement.srcObject as MediaStream;
+      stream.getTracks().forEach(track => track.stop());
+      videoElement.srcObject = null;
+    }
+  };
+
   const startScanning = async () => {
     try {
       toast({
@@ -101,13 +116,7 @@ export function AddBookDialog({ onAddBook }: AddBookDialogProps) {
               const isbn = result.getText();
               
               // Clean up
-              codeReader.reset();
-              codeReader.destroy();
-              const videoPreview = document.querySelector('.barcode-video-preview');
-              const closeButton = document.querySelector('.barcode-close-button');
-              if (videoPreview) document.body.removeChild(videoPreview);
-              if (closeButton) document.body.removeChild(closeButton);
-              
+              cleanupScanner(codeReader);
               setIsScanning(false);
               setIsbn(isbn);
               
@@ -136,12 +145,7 @@ export function AddBookDialog({ onAddBook }: AddBookDialogProps) {
 
       // Handle close button click
       closeButton.onclick = () => {
-        codeReader.reset();
-        codeReader.destroy();
-        const videoPreview = document.querySelector('.barcode-video-preview');
-        const closeButton = document.querySelector('.barcode-close-button');
-        if (videoPreview) document.body.removeChild(videoPreview);
-        if (closeButton) document.body.removeChild(closeButton);
+        cleanupScanner(codeReader);
         setIsScanning(false);
       };
 
