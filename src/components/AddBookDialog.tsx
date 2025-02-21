@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,7 +11,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { PlusCircle, Search, Loader2 } from "lucide-react";
+import { PlusCircle, Search, Loader2, Camera } from "lucide-react";
 import { lookupISBN } from "@/services/isbnService";
 import { useToast } from "@/components/ui/use-toast";
 import {
@@ -43,15 +44,128 @@ export function AddBookDialog({ onAddBook }: AddBookDialogProps) {
   const [authorDescription, setAuthorDescription] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isGeneratingDescriptions, setIsGeneratingDescriptions] = useState(false);
+  const [isScanning, setIsScanning] = useState(false);
   const { toast } = useToast();
 
-  const handleIsbnLookup = async () => {
-    if (!isbn) return;
+  const startScanning = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      const video = document.createElement('video');
+      video.srcObject = stream;
+      await video.play();
+
+      // Create a canvas to capture video frames
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext('2d');
+
+      if (!ctx) {
+        throw new Error('Could not get canvas context');
+      }
+
+      // Try to use the Barcode Detection API if available
+      if ('BarcodeDetector' in window) {
+        const barcodeDetector = new (window as any).BarcodeDetector({
+          formats: ['ean_13', 'ean_8', 'isbn']
+        });
+
+        const detectCode = async () => {
+          if (!isScanning) {
+            stream.getTracks().forEach(track => track.stop());
+            return;
+          }
+
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          try {
+            const barcodes = await barcodeDetector.detect(canvas);
+            if (barcodes.length > 0) {
+              const isbn = barcodes[0].rawValue;
+              setIsbn(isbn);
+              handleIsbnLookup(isbn);
+              setIsScanning(false);
+              stream.getTracks().forEach(track => track.stop());
+            } else {
+              requestAnimationFrame(detectCode);
+            }
+          } catch (error) {
+            console.error('Barcode detection error:', error);
+            requestAnimationFrame(detectCode);
+          }
+        };
+
+        detectCode();
+      } else {
+        // Fallback to manual capture - user can click when barcode is in view
+        const captureButton = document.createElement('button');
+        captureButton.textContent = 'Capture';
+        captureButton.className = 'fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-primary text-white px-4 py-2 rounded-full';
+        document.body.appendChild(captureButton);
+
+        captureButton.onclick = async () => {
+          try {
+            // Capture frame
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            // Clean up
+            stream.getTracks().forEach(track => track.stop());
+            document.body.removeChild(captureButton);
+            setIsScanning(false);
+
+            toast({
+              title: "Image captured",
+              description: "Please enter the ISBN manually from the captured image.",
+            });
+          } catch (error) {
+            console.error('Capture error:', error);
+            toast({
+              title: "Error",
+              description: "Failed to capture image. Please try again or enter ISBN manually.",
+              variant: "destructive",
+            });
+          }
+        };
+      }
+
+      // Show the video feed
+      const videoPreview = document.createElement('div');
+      videoPreview.className = 'fixed inset-0 bg-black flex items-center justify-center z-50';
+      videoPreview.appendChild(video);
+      document.body.appendChild(videoPreview);
+
+      // Add close button
+      const closeButton = document.createElement('button');
+      closeButton.textContent = '×';
+      closeButton.className = 'fixed top-4 right-4 text-white text-2xl z-50';
+      closeButton.onclick = () => {
+        stream.getTracks().forEach(track => track.stop());
+        document.body.removeChild(videoPreview);
+        if (document.body.contains(closeButton)) {
+          document.body.removeChild(closeButton);
+        }
+        setIsScanning(false);
+      };
+      document.body.appendChild(closeButton);
+
+    } catch (error) {
+      console.error('Camera access error:', error);
+      toast({
+        title: "Error",
+        description: "Could not access camera. Please check permissions and try again.",
+        variant: "destructive",
+      });
+      setIsScanning(false);
+    }
+  };
+
+  const handleIsbnLookup = async (isbnToLookup?: string) => {
+    const isbnValue = isbnToLookup || isbn;
+    if (!isbnValue) return;
 
     setIsLoading(true);
     setIsGeneratingDescriptions(true);
     try {
-      const bookData = await lookupISBN(isbn);
+      const bookData = await lookupISBN(isbnValue);
       if (bookData) {
         setTitle(bookData.title);
         setAuthor(bookData.author);
@@ -133,7 +247,7 @@ export function AddBookDialog({ onAddBook }: AddBookDialogProps) {
               />
               <Button 
                 type="button" 
-                onClick={handleIsbnLookup}
+                onClick={() => handleIsbnLookup()}
                 disabled={isLoading || !isbn}
                 variant="outline"
               >
@@ -142,6 +256,18 @@ export function AddBookDialog({ onAddBook }: AddBookDialogProps) {
                 ) : (
                   <Search className="h-4 w-4" />
                 )}
+              </Button>
+              <Button
+                type="button"
+                onClick={() => {
+                  setIsScanning(true);
+                  startScanning();
+                }}
+                disabled={isLoading || isScanning}
+                variant="outline"
+                title="Scan barcode"
+              >
+                <Camera className="h-4 w-4" />
               </Button>
             </div>
           </div>
