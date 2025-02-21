@@ -17,6 +17,7 @@ export function useBooks(user: User | null) {
 
   const refreshBooks = async () => {
     try {
+      console.log('Refreshing books with user:', user?.id);
       const booksData = await fetchBooks(user?.id);
       setBooks(booksData);
     } catch (error) {
@@ -57,10 +58,7 @@ export function useBooks(user: User | null) {
   const lendBook = async (id: number, borrowerName: string) => {
     try {
       await lendBookToUser(id, borrowerName);
-      setBooks(books.map(book =>
-        book.id === id ? { ...book, lentTo: borrowerName } : book
-      ));
-      
+      // Don't update local state, let the realtime subscription handle it
       toast({
         title: "Success",
         description: `Book has been lent to ${borrowerName}.`,
@@ -78,10 +76,7 @@ export function useBooks(user: User | null) {
   const returnBook = async (id: number) => {
     try {
       await returnBookToLibrary(id);
-      setBooks(books.map(book =>
-        book.id === id ? { ...book, lentTo: null } : book
-      ));
-      
+      // Don't update local state, let the realtime subscription handle it
       toast({
         title: "Success",
         description: "Book has been returned to the library.",
@@ -97,6 +92,7 @@ export function useBooks(user: User | null) {
   };
 
   useEffect(() => {
+    console.log('Setting up realtime subscriptions and initial fetch');
     refreshBooks();
 
     // Subscribe to real-time changes
@@ -111,6 +107,18 @@ export function useBooks(user: User | null) {
         },
         (payload) => {
           console.log('Books table changed:', payload);
+          refreshBooks();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'loans'
+        },
+        (payload) => {
+          console.log('Loans changed:', payload);
           refreshBooks();
         }
       )
@@ -138,24 +146,14 @@ export function useBooks(user: User | null) {
           refreshBooks();
         }
       )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'loans'
-        },
-        (payload) => {
-          console.log('Loans changed:', payload);
-          refreshBooks();
-        }
-      )
       .subscribe();
 
+    // Cleanup subscription on unmount
     return () => {
+      console.log('Cleaning up realtime subscriptions');
       supabase.removeChannel(channel);
     };
-  }, [user]);
+  }, [user]); // Only re-run when user changes
 
   return { books, addBook, lendBook, returnBook };
 }
