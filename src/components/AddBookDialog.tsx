@@ -48,6 +48,11 @@ export function AddBookDialog({ onAddBook }: AddBookDialogProps) {
 
   const startScanning = async () => {
     try {
+      toast({
+        title: "Starting camera",
+        description: "Please allow camera access if prompted",
+      });
+
       const stream = await navigator.mediaDevices.getUserMedia({ 
         video: { 
           facingMode: 'environment',
@@ -56,6 +61,11 @@ export function AddBookDialog({ onAddBook }: AddBookDialogProps) {
         } 
       });
       
+      toast({
+        title: "Camera started",
+        description: "Position the ISBN barcode within the white frame",
+      });
+
       const video = document.createElement('video');
       video.srcObject = stream;
       video.setAttribute('playsinline', 'true');
@@ -71,6 +81,11 @@ export function AddBookDialog({ onAddBook }: AddBookDialogProps) {
       }
 
       if ('BarcodeDetector' in window) {
+        toast({
+          title: "Scanner ready",
+          description: "Scanning for ISBN barcode...",
+        });
+
         const barcodeDetector = new (window as any).BarcodeDetector({
           formats: [
             'qr_code',
@@ -98,7 +113,6 @@ export function AddBookDialog({ onAddBook }: AddBookDialogProps) {
           try {
             const barcodes = await barcodeDetector.detect(canvas);
             if (barcodes.length > 0) {
-              console.log('Detected barcodes:', barcodes); // Debug log
               const isbn = barcodes[0].rawValue;
               
               // Clean up
@@ -113,8 +127,8 @@ export function AddBookDialog({ onAddBook }: AddBookDialogProps) {
               handleIsbnLookup(isbn);
               
               toast({
-                title: "Barcode detected",
-                description: `ISBN: ${isbn}`,
+                title: "Success!",
+                description: `ISBN detected: ${isbn}`,
               });
             } else {
               // Continue scanning with a slight delay to prevent overwhelming the CPU
@@ -125,7 +139,11 @@ export function AddBookDialog({ onAddBook }: AddBookDialogProps) {
               }, 100);
             }
           } catch (error) {
-            console.error('Barcode detection error:', error);
+            toast({
+              title: "Detection error",
+              description: "Failed to detect barcode. Please try again.",
+              variant: "destructive",
+            });
             if (isScanning) {
               requestAnimationFrame(detectCode);
             }
@@ -134,11 +152,11 @@ export function AddBookDialog({ onAddBook }: AddBookDialogProps) {
 
         // Start detection loop
         detectCode();
-        
-        // Add a debug message to confirm API is available
-        console.log('BarcodeDetector API is available');
       } else {
-        console.log('BarcodeDetector API is not available, falling back to manual capture');
+        toast({
+          title: "Limited support",
+          description: "Automatic scanning not available. Use manual capture instead.",
+        });
         const captureButton = document.createElement('button');
         captureButton.textContent = 'Capture';
         captureButton.className = 'fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-primary text-white px-4 py-2 rounded-full z-[60]';
@@ -229,9 +247,8 @@ export function AddBookDialog({ onAddBook }: AddBookDialogProps) {
       document.head.appendChild(style);
 
     } catch (error) {
-      console.error('Camera access error:', error);
       toast({
-        title: "Error",
+        title: "Camera Error",
         description: "Could not access camera. Please check permissions and try again.",
         variant: "destructive",
       });
