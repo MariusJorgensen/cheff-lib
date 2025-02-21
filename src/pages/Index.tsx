@@ -16,8 +16,12 @@ const Index = () => {
   const { books, addBook, lendBook, returnBook } = useBooks(user);
 
   const filteredBooks = books.filter((book) => {
-    const matchesSearch = book.title.toLowerCase().includes(search.toLowerCase()) ||
-                         book.author.toLowerCase().includes(search.toLowerCase());
+    const searchTerms = search.toLowerCase();
+    const matchesSearch = 
+      book.title.toLowerCase().includes(searchTerms) ||
+      book.author.toLowerCase().includes(searchTerms) ||
+      book.location.toLowerCase().includes(searchTerms) ||
+      book.bookType.toLowerCase().includes(searchTerms);
     
     const matchesFilter = 
       filter === "all" ||
