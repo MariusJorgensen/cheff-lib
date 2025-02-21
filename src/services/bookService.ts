@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { formatBookData } from "@/utils/bookFormatters";
 import { Book } from "@/types";
@@ -18,6 +17,7 @@ export const fetchUserRatingsAndReactions = async (userId: string) => {
 };
 
 export const fetchBooks = async (userId: string | undefined = undefined) => {
+  console.log('Fetching books for user:', userId);
   // Fetch books with their active loans (if any) and include user profile info
   const { data: booksData, error: booksError } = await supabase
     .from('books')
@@ -32,6 +32,7 @@ export const fetchBooks = async (userId: string | undefined = undefined) => {
       book_description,
       author_description,
       loans (
+        id,
         user_id,
         returned_at,
         created_at,
@@ -43,14 +44,21 @@ export const fetchBooks = async (userId: string | undefined = undefined) => {
         )
       ),
       book_ratings (
-        rating
+        rating,
+        user_id
       ),
       book_reactions (
-        reaction
+        reaction,
+        user_id
       )
     `);
 
-  if (booksError) throw booksError;
+  if (booksError) {
+    console.error('Error fetching books:', booksError);
+    throw booksError;
+  }
+
+  console.log('Raw books data:', booksData);
 
   let userRatings = null;
   let userReactions = null;
@@ -63,14 +71,28 @@ export const fetchBooks = async (userId: string | undefined = undefined) => {
 
   // Process the books data to include proper borrower information
   const processedBooksData = booksData.map(book => {
+    // Find the active loan (where returned_at is null)
     const activeLoan = book.loans?.find((loan: any) => !loan.returned_at);
-    if (activeLoan && activeLoan.profiles) {
-      const userProfile = activeLoan.profiles;
-      activeLoan.lent_to = userProfile.full_name || userProfile.email;
+    
+    if (activeLoan) {
+      console.log('Active loan found for book:', book.title, activeLoan);
+      if (activeLoan.profiles) {
+        activeLoan.lent_to = activeLoan.profiles.full_name || activeLoan.profiles.email;
+      }
     }
-    return book;
+    
+    return {
+      ...book,
+      loans: book.loans?.map((loan: any) => ({
+        user_id: loan.user_id,
+        returned_at: loan.returned_at,
+        created_at: loan.created_at,
+        lent_to: loan.lent_to
+      }))
+    };
   });
 
+  console.log('Processed books data:', processedBooksData);
   return processedBooksData.map(book => formatBookData(book, userRatings, userReactions));
 };
 

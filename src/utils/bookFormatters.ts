@@ -20,14 +20,13 @@ export const formatBookData = (
   // Find the active loan (where returned_at is null)
   const activeLoan = book.loans?.find((loan: any) => !loan.returned_at);
   
-  // Get the borrower's display name from the profiles data
+  // Get the borrower's display name from the active loan
   let lentTo = null;
+  let loanDate = null;
+  
   if (activeLoan) {
-    if (activeLoan.profiles) {
-      lentTo = activeLoan.profiles.full_name || activeLoan.profiles.email;
-    } else if (activeLoan.lent_to) {
-      lentTo = activeLoan.lent_to;
-    }
+    lentTo = activeLoan.lent_to;
+    loanDate = activeLoan.created_at;
   }
 
   // Ensure location is one of the two valid options
@@ -39,7 +38,7 @@ export const formatBookData = (
     author: book.author,
     imageUrl: book.image_url,
     lentTo,
-    loanDate: activeLoan ? activeLoan.created_at : null,
+    loanDate,
     averageRating: book.average_rating,
     aiSummary: book.ai_summary,
     userRating,
