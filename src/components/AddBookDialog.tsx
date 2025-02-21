@@ -80,93 +80,104 @@ export function AddBookDialog({ onAddBook }: AddBookDialogProps) {
         throw new Error('Could not get canvas context');
       }
 
-      if ('BarcodeDetector' in window) {
-        toast({
-          title: "Scanner ready",
-          description: "Scanning for ISBN barcode...",
-        });
-
-        const barcodeDetector = new (window as any).BarcodeDetector({
-          formats: [
-            'qr_code',
-            'ean_13',
-            'ean_8',
-            'upc_a',
-            'upc_e',
-            'code_128',
-            'code_39',
-            'code_93',
-            'data_matrix',
-            'itf',
-            'isbn'
-          ]
-        });
-
-        const detectCode = async () => {
-          if (!isScanning) {
-            stream.getTracks().forEach(track => track.stop());
-            return;
-          }
-
-          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      if ('BarcodeDetector' in window && typeof (window as any).BarcodeDetector === 'function') {
+        try {
+          const formats = await (window as any).BarcodeDetector.getSupportedFormats();
           
-          try {
-            const barcodes = await barcodeDetector.detect(canvas);
-            if (barcodes.length > 0) {
-              const isbn = barcodes[0].rawValue;
-              
-              // Clean up
-              stream.getTracks().forEach(track => track.stop());
-              const videoPreview = document.querySelector('.barcode-video-preview');
-              const closeButton = document.querySelector('.barcode-close-button');
-              if (videoPreview) document.body.removeChild(videoPreview);
-              if (closeButton) document.body.removeChild(closeButton);
-              
-              setIsScanning(false);
-              setIsbn(isbn);
-              handleIsbnLookup(isbn);
-              
-              toast({
-                title: "Success!",
-                description: `ISBN detected: ${isbn}`,
-              });
-            } else {
-              // Continue scanning with a slight delay to prevent overwhelming the CPU
-              setTimeout(() => {
-                if (isScanning) {
-                  requestAnimationFrame(detectCode);
-                }
-              }, 100);
-            }
-          } catch (error) {
-            toast({
-              title: "Detection error",
-              description: "Failed to detect barcode. Please try again.",
-              variant: "destructive",
-            });
-            if (isScanning) {
-              requestAnimationFrame(detectCode);
-            }
+          if (!formats || formats.length === 0) {
+            throw new Error('No supported barcode formats');
           }
-        };
 
-        // Start detection loop
-        detectCode();
+          toast({
+            title: "Scanner ready",
+            description: "Scanning for ISBN barcode...",
+          });
+
+          const barcodeDetector = new (window as any).BarcodeDetector({
+            formats: [
+              'ean_13',
+              'ean_8',
+              'isbn',
+              'upc_a',
+              'code_128'
+            ]
+          });
+
+          try {
+            await barcodeDetector.detect(canvas);
+          } catch (e) {
+            throw new Error('Barcode detector initialization failed');
+          }
+
+          const detectCode = async () => {
+            if (!isScanning) {
+              stream.getTracks().forEach(track => track.stop());
+              return;
+            }
+
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            try {
+              const barcodes = await barcodeDetector.detect(canvas);
+              if (barcodes.length > 0) {
+                const isbn = barcodes[0].rawValue;
+                
+                // Clean up
+                stream.getTracks().forEach(track => track.stop());
+                const videoPreview = document.querySelector('.barcode-video-preview');
+                const closeButton = document.querySelector('.barcode-close-button');
+                if (videoPreview) document.body.removeChild(videoPreview);
+                if (closeButton) document.body.removeChild(closeButton);
+                
+                setIsScanning(false);
+                setIsbn(isbn);
+                handleIsbnLookup(isbn);
+                
+                toast({
+                  title: "Success!",
+                  description: `ISBN detected: ${isbn}`,
+                });
+              } else {
+                // Continue scanning with a slight delay to prevent overwhelming the CPU
+                setTimeout(() => {
+                  if (isScanning) {
+                    requestAnimationFrame(detectCode);
+                  }
+                }, 100);
+              }
+            } catch (error) {
+              toast({
+                title: "Detection error",
+                description: "Failed to detect barcode. Please try again.",
+                variant: "destructive",
+              });
+              if (isScanning) {
+                requestAnimationFrame(detectCode);
+              }
+            }
+          };
+
+          detectCode();
+        } catch (error) {
+          console.error('BarcodeDetector error:', error);
+          throw new Error('Barcode scanning not supported on this device');
+        }
       } else {
         toast({
-          title: "Limited support",
-          description: "Automatic scanning not available. Use manual capture instead.",
+          title: "Manual Capture Mode",
+          description: "Your device doesn't support automatic barcode scanning. Use the Capture button to take a photo.",
+          duration: 5000,
         });
+        
         const captureButton = document.createElement('button');
-        captureButton.textContent = 'Capture';
-        captureButton.className = 'fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-primary text-white px-6 py-3 rounded-full z-[60] text-lg font-semibold shadow-lg';
+        captureButton.textContent = '📸 Capture Photo';
+        captureButton.className = 'fixed bottom-8 left-1/2 transform -translate-x-1/2 bg-primary text-white px-8 py-4 rounded-full z-[60] text-lg font-semibold shadow-lg active:scale-95 transition-transform';
         document.body.appendChild(captureButton);
 
         captureButton.onclick = async () => {
           try {
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
             
-            // Clean up
             stream.getTracks().forEach(track => track.stop());
             document.body.removeChild(captureButton);
             const videoPreview = document.querySelector('.barcode-video-preview');
@@ -177,15 +188,17 @@ export function AddBookDialog({ onAddBook }: AddBookDialogProps) {
             setIsScanning(false);
 
             toast({
-              title: "Image captured",
-              description: "Please enter the ISBN manually from the captured image.",
+              title: "Photo captured",
+              description: "Please enter the ISBN number shown in the photo.",
+              duration: 5000,
             });
           } catch (error) {
             console.error('Capture error:', error);
             toast({
               title: "Error",
-              description: "Failed to capture image. Please try again or enter ISBN manually.",
+              description: "Failed to capture photo. Please try again or enter ISBN manually.",
               variant: "destructive",
+              duration: 5000,
             });
           }
         };
@@ -197,20 +210,17 @@ export function AddBookDialog({ onAddBook }: AddBookDialogProps) {
       const container = document.createElement('div');
       container.className = 'relative w-full h-full';
       
-      const scanLine = document.createElement('div');
-      scanLine.className = 'absolute left-0 right-0 h-0.5 bg-red-500 z-[51] animate-scan';
-      
       const overlay = document.createElement('div');
       overlay.className = 'absolute inset-0 z-[51]';
       overlay.innerHTML = `
         <div class="absolute inset-0 flex items-center justify-center">
-          <div class="w-64 h-32 border-2 border-white rounded-lg"></div>
+          <div class="w-72 h-40 border-4 border-white rounded-lg"></div>
         </div>
         <div class="absolute inset-0 bg-black bg-opacity-50"></div>
         <div class="absolute inset-0 flex items-center justify-center">
-          <div class="w-64 h-32 border-2 border-white rounded-lg bg-transparent">
-            <div class="absolute inset-0 flex items-center justify-center text-white text-sm">
-              Center the barcode here
+          <div class="w-72 h-40 border-4 border-white rounded-lg bg-transparent">
+            <div class="absolute inset-0 flex items-center justify-center text-white text-base font-medium px-4 text-center">
+              Position the ISBN barcode in this frame and tap Capture
             </div>
           </div>
         </div>
@@ -219,42 +229,32 @@ export function AddBookDialog({ onAddBook }: AddBookDialogProps) {
       video.className = 'w-full h-full object-cover';
       
       container.appendChild(video);
-      container.appendChild(scanLine);
       container.appendChild(overlay);
       videoPreview.appendChild(container);
       document.body.appendChild(videoPreview);
 
       const closeButton = document.createElement('button');
-      closeButton.textContent = '×';
-      closeButton.className = 'barcode-close-button fixed top-4 right-4 text-white text-4xl z-[52] w-10 h-10 flex items-center justify-center rounded-full bg-black bg-opacity-50 hover:bg-opacity-75';
+      closeButton.innerHTML = '✕';
+      closeButton.className = 'barcode-close-button fixed top-4 right-4 text-white text-4xl z-[52] w-12 h-12 flex items-center justify-center rounded-full bg-black bg-opacity-50 hover:bg-opacity-75';
       closeButton.onclick = () => {
         stream.getTracks().forEach(track => track.stop());
         document.body.removeChild(videoPreview);
         document.body.removeChild(closeButton);
-        if (document.querySelector('.capture-button')) {
-          document.body.removeChild(document.querySelector('.capture-button')!);
+        const captureButton = document.querySelector('button[class*="bottom-8"]');
+        if (captureButton) {
+          document.body.removeChild(captureButton);
         }
         setIsScanning(false);
       };
       document.body.appendChild(closeButton);
 
-      const style = document.createElement('style');
-      style.textContent = `
-        @keyframes scan {
-          0% { top: 20%; }
-          100% { top: 80%; }
-        }
-        .animate-scan {
-          animation: scan 1.5s linear infinite alternate;
-        }
-      `;
-      document.head.appendChild(style);
-
     } catch (error) {
+      console.error('Camera error:', error);
       toast({
         title: "Camera Error",
-        description: "Could not access camera. Please check permissions and try again.",
+        description: typeof error === 'string' ? error : "Could not access camera. Please check permissions and try again.",
         variant: "destructive",
+        duration: 5000,
       });
       setIsScanning(false);
     }
