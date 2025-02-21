@@ -95,19 +95,6 @@ export function useBooks(user: User | null) {
   useEffect(() => {
     console.log('Setting up realtime subscriptions');
     
-    // Enable realtime for the tables
-    const enableRealtimeQuery = async () => {
-      await supabase.rpc('extensions.enable_realtime', {
-        relation: 'books',
-        enable: true
-      });
-      await supabase.rpc('extensions.enable_realtime', {
-        relation: 'loans',
-        enable: true
-      });
-    };
-
-    enableRealtimeQuery();
     refreshBooks();
 
     // Subscribe to real-time changes
