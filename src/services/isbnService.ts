@@ -8,74 +8,37 @@ interface GoogleBooksResponse {
         thumbnail?: string;
         smallThumbnail?: string;
       };
+      description?: string;
     };
   }[];
 }
 
-const tryGoogleBooksAPI = async (isbn: string): Promise<string | null> => {
+const generateDescriptions = async (bookInfo: any) => {
   try {
-    const response = await fetch(`https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}`);
-    const data = await response.json() as GoogleBooksResponse;
-    
-    if (!data.items?.[0]?.volumeInfo?.imageLinks?.thumbnail) {
+    const response = await fetch('https://tmpjozfsriqsezobfvhh.supabase.co/functions/v1/generate-book-descriptions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        title: bookInfo.title,
+        author: bookInfo.authors?.[0] || 'Unknown Author',
+        description: bookInfo.description || ''
+      })
+    });
+
+    if (!response.ok) {
+      console.error('Error generating descriptions');
       return null;
     }
 
-    const coverUrl = data.items[0].volumeInfo.imageLinks.thumbnail
-      .replace('http://', 'https://')
-      .replace('zoom=1', 'zoom=2');
-
-    // Test if the image actually loads
-    const imgResponse = await fetch(coverUrl);
-    if (!imgResponse.ok || imgResponse.headers.get('content-length') === '0') {
-      return null;
-    }
-
-    return coverUrl;
-  } catch (error) {
-    console.error('Error with Google Books API:', error);
-    return null;
-  }
-};
-
-const tryOpenLibraryAPI = async (isbn: string): Promise<string | null> => {
-  try {
-    const response = await fetch(`https://openlibrary.org/isbn/${isbn}.json`);
     const data = await response.json();
-    
-    if (!data.covers?.[0]) {
-      return null;
-    }
-
-    const coverUrl = `https://covers.openlibrary.org/b/id/${data.covers[0]}-L.jpg`;
-
-    // Test if the image actually loads
-    const imgResponse = await fetch(coverUrl);
-    if (!imgResponse.ok || imgResponse.headers.get('content-length') === '0') {
-      return null;
-    }
-
-    return coverUrl;
+    return {
+      bookDescription: data.bookDescription,
+      authorDescription: data.authorDescription
+    };
   } catch (error) {
-    console.error('Error with OpenLibrary API:', error);
-    return null;
-  }
-};
-
-const tryISBDAPI = async (isbn: string): Promise<string | null> => {
-  try {
-    // The Dutch National Library API provides high-quality scans
-    const coverUrl = `https://covers.kb.nl/isbn/${isbn}.jpg`;
-    
-    // Test if the image actually loads
-    const imgResponse = await fetch(coverUrl);
-    if (!imgResponse.ok || imgResponse.headers.get('content-length') === '0') {
-      return null;
-    }
-
-    return coverUrl;
-  } catch (error) {
-    console.error('Error with ISBD API:', error);
+    console.error('Error generating descriptions:', error);
     return null;
   }
 };
@@ -84,6 +47,8 @@ export const lookupISBN = async (isbn: string): Promise<{
   title: string;
   author: string;
   imageUrl: string;
+  bookDescription?: string;
+  authorDescription?: string;
 } | null> => {
   try {
     // Remove any hyphens or spaces from ISBN
@@ -100,16 +65,15 @@ export const lookupISBN = async (isbn: string): Promise<{
 
     const bookInfo = data.items[0].volumeInfo;
     
-    // Try each image source in sequence until we find one that works
-    const coverUrl = await tryGoogleBooksAPI(cleanISBN) ||
-                    await tryOpenLibraryAPI(cleanISBN) ||
-                    await tryISBDAPI(cleanISBN) ||
-                    'https://placehold.co/400x600?text=No+Cover+Available';
-
+    // Generate descriptions using ChatGPT
+    const descriptions = await generateDescriptions(bookInfo);
+    
     return {
       title: bookInfo.title,
       author: bookInfo.authors?.[0] || 'Unknown Author',
-      imageUrl: coverUrl,
+      imageUrl: bookInfo.imageLinks?.thumbnail?.replace('http://', 'https://') || 'https://placehold.co/400x600?text=No+Cover+Available',
+      bookDescription: descriptions?.bookDescription,
+      authorDescription: descriptions?.authorDescription,
     };
   } catch (error) {
     console.error('Error looking up ISBN:', error);

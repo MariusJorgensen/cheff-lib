@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { PlusCircle, Search, Loader2 } from "lucide-react";
 import { lookupISBN } from "@/services/isbnService";
 import { useToast } from "@/components/ui/use-toast";
@@ -22,7 +23,14 @@ import {
 } from "@/components/ui/select";
 
 interface AddBookDialogProps {
-  onAddBook: (title: string, author: string, imageUrl: string, location: 'Stockholm 🇸🇪' | 'Oslo 🇧🇻') => void;
+  onAddBook: (
+    title: string, 
+    author: string, 
+    imageUrl: string, 
+    location: 'Stockholm 🇸🇪' | 'Oslo 🇧🇻',
+    bookDescription?: string,
+    authorDescription?: string
+  ) => void;
 }
 
 export function AddBookDialog({ onAddBook }: AddBookDialogProps) {
@@ -32,6 +40,8 @@ export function AddBookDialog({ onAddBook }: AddBookDialogProps) {
   const [author, setAuthor] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [location, setLocation] = useState<'Stockholm 🇸🇪' | 'Oslo 🇧🇻'>('Oslo 🇧🇻');
+  const [bookDescription, setBookDescription] = useState("");
+  const [authorDescription, setAuthorDescription] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
@@ -45,6 +55,12 @@ export function AddBookDialog({ onAddBook }: AddBookDialogProps) {
         setTitle(bookData.title);
         setAuthor(bookData.author);
         setImageUrl(bookData.imageUrl);
+        if (bookData.bookDescription) {
+          setBookDescription(bookData.bookDescription);
+        }
+        if (bookData.authorDescription) {
+          setAuthorDescription(bookData.authorDescription);
+        }
         toast({
           title: "Book found",
           description: "Book information has been filled automatically.",
@@ -71,11 +87,13 @@ export function AddBookDialog({ onAddBook }: AddBookDialogProps) {
     e.preventDefault();
     if (title && author && location) {
       const finalImageUrl = imageUrl || "https://placehold.co/400x600?text=No+Cover+Available";
-      onAddBook(title, author, finalImageUrl, location);
+      onAddBook(title, author, finalImageUrl, location, bookDescription, authorDescription);
       setIsbn("");
       setTitle("");
       setAuthor("");
       setImageUrl("");
+      setBookDescription("");
+      setAuthorDescription("");
       setLocation('Oslo 🇧🇻');
       setOpen(false);
     }
@@ -89,7 +107,7 @@ export function AddBookDialog({ onAddBook }: AddBookDialogProps) {
           Add Book
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Add New Book</DialogTitle>
         </DialogHeader>
@@ -136,6 +154,26 @@ export function AddBookDialog({ onAddBook }: AddBookDialogProps) {
               onChange={(e) => setAuthor(e.target.value)}
               placeholder="Enter author name"
               required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="bookDescription">About the Book</Label>
+            <Textarea
+              id="bookDescription"
+              value={bookDescription}
+              onChange={(e) => setBookDescription(e.target.value)}
+              placeholder="Enter a description of the book"
+              className="min-h-[100px]"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="authorDescription">About the Author</Label>
+            <Textarea
+              id="authorDescription"
+              value={authorDescription}
+              onChange={(e) => setAuthorDescription(e.target.value)}
+              placeholder="Enter information about the author"
+              className="min-h-[100px]"
             />
           </div>
           <div className="space-y-2">

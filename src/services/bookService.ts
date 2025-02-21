@@ -78,7 +78,9 @@ export const addBookToLibrary = async (
   title: string, 
   author: string, 
   imageUrl: string,
-  location: 'Stockholm 🇸🇪' | 'Oslo 🇧🇻'
+  location: 'Stockholm 🇸🇪' | 'Oslo 🇧🇻',
+  bookDescription?: string,
+  authorDescription?: string
 ) => {
   const { data, error } = await supabase
     .from('books')
@@ -87,7 +89,9 @@ export const addBookToLibrary = async (
         title, 
         author, 
         image_url: imageUrl || undefined,
-        location
+        location,
+        book_description: bookDescription,
+        author_description: authorDescription
       }
     ])
     .select()
@@ -106,6 +110,8 @@ export const addBookToLibrary = async (
     reactions: {},
     userReactions: [],
     location: data.location,
+    bookDescription: data.book_description,
+    authorDescription: data.author_description,
   } as Book;
 };
 
