@@ -77,7 +77,7 @@ export const lookupISBN = async (isbn: string): Promise<{
       imageUrl: bookInfo.imageLinks?.thumbnail?.replace('http://', 'https://') || 'https://placehold.co/400x600?text=No+Cover+Available',
     };
 
-    // Then start generating descriptions
+    // Then generate descriptions
     const descriptions = await generateDescriptions(bookInfo);
     
     // Return complete info
@@ -91,3 +91,4 @@ export const lookupISBN = async (isbn: string): Promise<{
     return null;
   }
 };
+

@@ -79,6 +79,7 @@ export function AddBookDialog({ onAddBook }: AddBookDialogProps) {
         });
       }
     } catch (error) {
+      console.error('Error in ISBN lookup:', error);
       toast({
         title: "Error",
         description: "Failed to look up ISBN. Please try again or enter details manually.",
