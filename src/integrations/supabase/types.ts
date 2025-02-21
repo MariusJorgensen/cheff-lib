@@ -166,7 +166,9 @@ export type Database = {
         Row: {
           ai_summary: string | null
           author: string
+          author_description: string | null
           average_rating: number | null
+          book_description: string | null
           created_at: string | null
           id: number
           image_url: string | null
@@ -177,7 +179,9 @@ export type Database = {
         Insert: {
           ai_summary?: string | null
           author: string
+          author_description?: string | null
           average_rating?: number | null
+          book_description?: string | null
           created_at?: string | null
           id?: never
           image_url?: string | null
@@ -188,7 +192,9 @@ export type Database = {
         Update: {
           ai_summary?: string | null
           author?: string
+          author_description?: string | null
           average_rating?: number | null
+          book_description?: string | null
           created_at?: string | null
           id?: never
           image_url?: string | null

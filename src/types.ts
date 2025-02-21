@@ -18,14 +18,6 @@ export interface Book {
     lent_to: string | null;
     created_at: string;
   }>;
-}
-
-export interface Comment {
-  id: number;
-  comment: string;
-  createdAt: string;
-  user: {
-    fullName: string | null;
-    email: string;
-  };
+  bookDescription?: string | null;
+  authorDescription?: string | null;
 }

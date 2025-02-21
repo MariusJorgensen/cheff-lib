@@ -1,7 +1,13 @@
 
 import { Book } from "@/types";
-import { BookOpen, User, Calendar } from "lucide-react";
+import { BookOpen, User, Calendar, Info } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
 interface BookImageSectionProps {
   book: Book;
@@ -25,11 +31,46 @@ export function BookImageSection({ book }: BookImageSectionProps) {
           <span>{book.author}</span>
         </div>
 
-        {book.aiSummary && (
-          <p className="text-sm italic text-muted-foreground">
-            "{book.aiSummary}"
-          </p>
-        )}
+        <Accordion type="single" collapsible className="w-full">
+          {book.bookDescription && (
+            <AccordionItem value="book-description">
+              <AccordionTrigger className="text-sm">
+                About the Book
+              </AccordionTrigger>
+              <AccordionContent>
+                <p className="text-sm text-muted-foreground">
+                  {book.bookDescription}
+                </p>
+              </AccordionContent>
+            </AccordionItem>
+          )}
+
+          {book.authorDescription && (
+            <AccordionItem value="author-description">
+              <AccordionTrigger className="text-sm">
+                About the Author
+              </AccordionTrigger>
+              <AccordionContent>
+                <p className="text-sm text-muted-foreground">
+                  {book.authorDescription}
+                </p>
+              </AccordionContent>
+            </AccordionItem>
+          )}
+
+          {book.aiSummary && (
+            <AccordionItem value="ai-summary">
+              <AccordionTrigger className="text-sm">
+                AI Summary
+              </AccordionTrigger>
+              <AccordionContent>
+                <p className="text-sm italic text-muted-foreground">
+                  "{book.aiSummary}"
+                </p>
+              </AccordionContent>
+            </AccordionItem>
+          )}
+        </Accordion>
 
         {book.lentTo && (
           <div className="space-y-2">

@@ -47,5 +47,7 @@ export const formatBookData = (
     userReactions: bookUserReactions || [],
     location,
     loans: book.loans,
+    bookDescription: book.book_description,
+    authorDescription: book.author_description,
   };
 };
