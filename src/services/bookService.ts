@@ -72,6 +72,7 @@ export const fetchBooks = async (userId: string | undefined = undefined) => {
       averageRating: book.average_rating,
       aiSummary: book.ai_summary,
       addedBy: book.profiles?.full_name || book.profiles?.email || null,
+      createdAt: book.created_at || null,
       userRating: userRatings?.find(r => r.book_id === book.id)?.rating || null,
       reactions: {},
       userReactions: userReactions?.filter(r => r.book_id === book.id).map(r => r.reaction) || [],

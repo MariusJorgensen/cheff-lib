@@ -33,6 +33,11 @@ export function BookImageSection({ book }: BookImageSectionProps) {
           </div>
           <div className="text-sm text-muted-foreground/60 pl-6">
             Added by {book.addedBy || 'Unknown'}
+            {book.createdAt && (
+              <span className="ml-1">
+                ({formatDistanceToNow(new Date(book.createdAt), { addSuffix: true })})
+              </span>
+            )}
           </div>
         </div>
 
@@ -81,14 +86,15 @@ export function BookImageSection({ book }: BookImageSectionProps) {
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-muted-foreground">
               <User className="h-4 w-4" />
-              <span>Borrowed by: {book.lentTo}</span>
+              <span>
+                Borrowed by: {book.lentTo}
+                {book.loanDate && (
+                  <span className="text-sm text-muted-foreground/60 ml-1">
+                    ({formatDistanceToNow(new Date(book.loanDate), { addSuffix: true })})
+                  </span>
+                )}
+              </span>
             </div>
-            {book.loanDate && (
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Calendar className="h-4 w-4" />
-                <span>Borrowed {formatDistanceToNow(new Date(book.loanDate))} ago</span>
-              </div>
-            )}
           </div>
         )}
       </div>
