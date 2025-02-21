@@ -15,6 +15,7 @@ interface GoogleBooksResponse {
 
 const generateDescriptions = async (bookInfo: any) => {
   try {
+    console.log('Generating descriptions for:', bookInfo.title);
     const response = await fetch('https://tmpjozfsriqsezobfvhh.supabase.co/functions/v1/generate-book-descriptions', {
       method: 'POST',
       headers: {
@@ -28,11 +29,12 @@ const generateDescriptions = async (bookInfo: any) => {
     });
 
     if (!response.ok) {
-      console.error('Error generating descriptions');
+      console.error('Error generating descriptions:', await response.text());
       return null;
     }
 
     const data = await response.json();
+    console.log('Received descriptions:', data);
     return {
       bookDescription: data.bookDescription,
       authorDescription: data.authorDescription
@@ -54,7 +56,9 @@ export const lookupISBN = async (isbn: string): Promise<{
     // Remove any hyphens or spaces from ISBN
     const cleanISBN = isbn.replace(/[-\s]/g, '');
     
-    // First get the book metadata from Google Books (most reliable for this)
+    console.log('Looking up ISBN:', cleanISBN);
+    
+    // First get the book metadata from Google Books
     const response = await fetch(`https://www.googleapis.com/books/v1/volumes?q=isbn:${cleanISBN}`);
     const data = await response.json() as GoogleBooksResponse;
     
@@ -64,14 +68,21 @@ export const lookupISBN = async (isbn: string): Promise<{
     }
 
     const bookInfo = data.items[0].volumeInfo;
+    console.log('Found book info:', bookInfo);
     
-    // Generate descriptions using ChatGPT
-    const descriptions = await generateDescriptions(bookInfo);
-    
-    return {
+    // First return basic info
+    const basicInfo = {
       title: bookInfo.title,
       author: bookInfo.authors?.[0] || 'Unknown Author',
       imageUrl: bookInfo.imageLinks?.thumbnail?.replace('http://', 'https://') || 'https://placehold.co/400x600?text=No+Cover+Available',
+    };
+
+    // Then start generating descriptions
+    const descriptions = await generateDescriptions(bookInfo);
+    
+    // Return complete info
+    return {
+      ...basicInfo,
       bookDescription: descriptions?.bookDescription,
       authorDescription: descriptions?.authorDescription,
     };

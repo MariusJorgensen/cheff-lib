@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -43,28 +42,35 @@ export function AddBookDialog({ onAddBook }: AddBookDialogProps) {
   const [bookDescription, setBookDescription] = useState("");
   const [authorDescription, setAuthorDescription] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isGeneratingDescriptions, setIsGeneratingDescriptions] = useState(false);
   const { toast } = useToast();
 
   const handleIsbnLookup = async () => {
     if (!isbn) return;
 
     setIsLoading(true);
+    setIsGeneratingDescriptions(true);
     try {
       const bookData = await lookupISBN(isbn);
       if (bookData) {
         setTitle(bookData.title);
         setAuthor(bookData.author);
         setImageUrl(bookData.imageUrl);
-        if (bookData.bookDescription) {
-          setBookDescription(bookData.bookDescription);
-        }
-        if (bookData.authorDescription) {
-          setAuthorDescription(bookData.authorDescription);
-        }
+        
         toast({
           title: "Book found",
-          description: "Book information has been filled automatically.",
+          description: "Basic information has been filled. Generating descriptions...",
         });
+
+        // Wait for descriptions
+        if (bookData.bookDescription && bookData.authorDescription) {
+          setBookDescription(bookData.bookDescription);
+          setAuthorDescription(bookData.authorDescription);
+          toast({
+            title: "Descriptions generated",
+            description: "Book and author descriptions have been added.",
+          });
+        }
       } else {
         toast({
           title: "Book not found",
@@ -80,6 +86,7 @@ export function AddBookDialog({ onAddBook }: AddBookDialogProps) {
       });
     } finally {
       setIsLoading(false);
+      setIsGeneratingDescriptions(false);
     }
   };
 
@@ -121,6 +128,7 @@ export function AddBookDialog({ onAddBook }: AddBookDialogProps) {
                 onChange={(e) => setIsbn(e.target.value)}
                 placeholder="Enter ISBN"
                 className="flex-1"
+                disabled={isLoading}
               />
               <Button 
                 type="button" 
@@ -144,6 +152,7 @@ export function AddBookDialog({ onAddBook }: AddBookDialogProps) {
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Enter book title"
               required
+              disabled={isLoading}
             />
           </div>
           <div className="space-y-2">
@@ -154,26 +163,39 @@ export function AddBookDialog({ onAddBook }: AddBookDialogProps) {
               onChange={(e) => setAuthor(e.target.value)}
               placeholder="Enter author name"
               required
+              disabled={isLoading}
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="bookDescription">About the Book</Label>
+            <Label htmlFor="bookDescription" className="flex items-center gap-2">
+              About the Book
+              {isGeneratingDescriptions && (
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              )}
+            </Label>
             <Textarea
               id="bookDescription"
               value={bookDescription}
               onChange={(e) => setBookDescription(e.target.value)}
-              placeholder="Enter a description of the book"
+              placeholder={isGeneratingDescriptions ? "Generating description..." : "Enter a description of the book"}
               className="min-h-[100px]"
+              disabled={isGeneratingDescriptions}
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="authorDescription">About the Author</Label>
+            <Label htmlFor="authorDescription" className="flex items-center gap-2">
+              About the Author
+              {isGeneratingDescriptions && (
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              )}
+            </Label>
             <Textarea
               id="authorDescription"
               value={authorDescription}
               onChange={(e) => setAuthorDescription(e.target.value)}
-              placeholder="Enter information about the author"
+              placeholder={isGeneratingDescriptions ? "Generating description..." : "Enter information about the author"}
               className="min-h-[100px]"
+              disabled={isGeneratingDescriptions}
             />
           </div>
           <div className="space-y-2">
@@ -183,11 +205,16 @@ export function AddBookDialog({ onAddBook }: AddBookDialogProps) {
               value={imageUrl}
               onChange={(e) => setImageUrl(e.target.value)}
               placeholder="Enter image URL"
+              disabled={isLoading}
             />
           </div>
           <div className="space-y-2">
             <Label htmlFor="location">Location</Label>
-            <Select value={location} onValueChange={(value) => setLocation(value as 'Stockholm 🇸🇪' | 'Oslo 🇧🇻')}>
+            <Select 
+              value={location} 
+              onValueChange={(value) => setLocation(value as 'Stockholm 🇸🇪' | 'Oslo 🇧🇻')}
+              disabled={isLoading}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Select a location" />
               </SelectTrigger>
@@ -197,7 +224,7 @@ export function AddBookDialog({ onAddBook }: AddBookDialogProps) {
               </SelectContent>
             </Select>
           </div>
-          <Button type="submit" className="w-full">
+          <Button type="submit" className="w-full" disabled={isLoading || isGeneratingDescriptions}>
             Add Book
           </Button>
         </form>
