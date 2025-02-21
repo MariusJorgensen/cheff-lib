@@ -101,7 +101,8 @@ export function AddBookDialog({ onAddBook }: AddBookDialogProps) {
               const isbn = result.getText();
               
               // Clean up
-              codeReader.close();
+              codeReader.reset();
+              codeReader.destroy();
               const videoPreview = document.querySelector('.barcode-video-preview');
               const closeButton = document.querySelector('.barcode-close-button');
               if (videoPreview) document.body.removeChild(videoPreview);
@@ -135,7 +136,8 @@ export function AddBookDialog({ onAddBook }: AddBookDialogProps) {
 
       // Handle close button click
       closeButton.onclick = () => {
-        codeReader.close();
+        codeReader.reset();
+        codeReader.destroy();
         const videoPreview = document.querySelector('.barcode-video-preview');
         const closeButton = document.querySelector('.barcode-close-button');
         if (videoPreview) document.body.removeChild(videoPreview);
