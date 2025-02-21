@@ -49,12 +49,20 @@ export function AddBookDialog({ onAddBook }: AddBookDialogProps) {
 
   const startScanning = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { 
+          facingMode: 'environment',
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        } 
+      });
+      
       const video = document.createElement('video');
       video.srcObject = stream;
+      video.setAttribute('playsinline', 'true'); // Required for iOS
       await video.play();
 
-      // Create a canvas to capture video frames
+      // Create a canvas that matches the video dimensions
       const canvas = document.createElement('canvas');
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
@@ -76,16 +84,31 @@ export function AddBookDialog({ onAddBook }: AddBookDialogProps) {
             return;
           }
 
+          // Draw the current video frame
           ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          
           try {
             const barcodes = await barcodeDetector.detect(canvas);
             if (barcodes.length > 0) {
               const isbn = barcodes[0].rawValue;
+              
+              // Clean up
+              stream.getTracks().forEach(track => track.stop());
+              const videoPreview = document.querySelector('.barcode-video-preview');
+              const closeButton = document.querySelector('.barcode-close-button');
+              if (videoPreview) document.body.removeChild(videoPreview);
+              if (closeButton) document.body.removeChild(closeButton);
+              
+              setIsScanning(false);
               setIsbn(isbn);
               handleIsbnLookup(isbn);
-              setIsScanning(false);
-              stream.getTracks().forEach(track => track.stop());
+              
+              toast({
+                title: "Barcode detected",
+                description: `ISBN: ${isbn}`,
+              });
             } else {
+              // Continue scanning
               requestAnimationFrame(detectCode);
             }
           } catch (error) {
@@ -94,22 +117,27 @@ export function AddBookDialog({ onAddBook }: AddBookDialogProps) {
           }
         };
 
+        // Start the detection loop
         detectCode();
       } else {
-        // Fallback to manual capture - user can click when barcode is in view
+        // Fallback to manual capture
         const captureButton = document.createElement('button');
         captureButton.textContent = 'Capture';
-        captureButton.className = 'fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-primary text-white px-4 py-2 rounded-full';
+        captureButton.className = 'fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-primary text-white px-4 py-2 rounded-full z-[60]';
         document.body.appendChild(captureButton);
 
         captureButton.onclick = async () => {
           try {
-            // Capture frame
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
             
             // Clean up
             stream.getTracks().forEach(track => track.stop());
             document.body.removeChild(captureButton);
+            const videoPreview = document.querySelector('.barcode-video-preview');
+            const closeButton = document.querySelector('.barcode-close-button');
+            if (videoPreview) document.body.removeChild(videoPreview);
+            if (closeButton) document.body.removeChild(closeButton);
+            
             setIsScanning(false);
 
             toast({
@@ -127,25 +155,67 @@ export function AddBookDialog({ onAddBook }: AddBookDialogProps) {
         };
       }
 
-      // Show the video feed
+      // Show the video feed with scanning interface
       const videoPreview = document.createElement('div');
-      videoPreview.className = 'fixed inset-0 bg-black flex items-center justify-center z-50';
-      videoPreview.appendChild(video);
+      videoPreview.className = 'barcode-video-preview fixed inset-0 bg-black flex items-center justify-center z-50';
+      
+      // Create a container for the video and scanning overlay
+      const container = document.createElement('div');
+      container.className = 'relative w-full h-full';
+      
+      // Add a scanning line animation
+      const scanLine = document.createElement('div');
+      scanLine.className = 'absolute left-0 right-0 h-0.5 bg-red-500 z-[51] animate-scan';
+      
+      // Add scanning frame overlay
+      const overlay = document.createElement('div');
+      overlay.className = 'absolute inset-0 z-[51]';
+      overlay.innerHTML = `
+        <div class="absolute inset-0 flex items-center justify-center">
+          <div class="w-64 h-32 border-2 border-white rounded-lg"></div>
+        </div>
+        <div class="absolute inset-0 bg-black bg-opacity-50"></div>
+        <div class="absolute inset-0 flex items-center justify-center">
+          <div class="w-64 h-32 border-2 border-white rounded-lg bg-transparent"></div>
+        </div>
+      `;
+
+      // Style the video element
+      video.className = 'w-full h-full object-cover';
+      
+      container.appendChild(video);
+      container.appendChild(scanLine);
+      container.appendChild(overlay);
+      videoPreview.appendChild(container);
       document.body.appendChild(videoPreview);
 
       // Add close button
       const closeButton = document.createElement('button');
       closeButton.textContent = '×';
-      closeButton.className = 'fixed top-4 right-4 text-white text-2xl z-50';
+      closeButton.className = 'barcode-close-button fixed top-4 right-4 text-white text-4xl z-[52] w-10 h-10 flex items-center justify-center rounded-full bg-black bg-opacity-50 hover:bg-opacity-75';
       closeButton.onclick = () => {
         stream.getTracks().forEach(track => track.stop());
         document.body.removeChild(videoPreview);
-        if (document.body.contains(closeButton)) {
-          document.body.removeChild(closeButton);
+        document.body.removeChild(closeButton);
+        if (document.querySelector('.capture-button')) {
+          document.body.removeChild(document.querySelector('.capture-button')!);
         }
         setIsScanning(false);
       };
       document.body.appendChild(closeButton);
+
+      // Add scanning animation styles
+      const style = document.createElement('style');
+      style.textContent = `
+        @keyframes scan {
+          0% { top: 20%; }
+          100% { top: 80%; }
+        }
+        .animate-scan {
+          animation: scan 1.5s linear infinite alternate;
+        }
+      `;
+      document.head.appendChild(style);
 
     } catch (error) {
       console.error('Camera access error:', error);
