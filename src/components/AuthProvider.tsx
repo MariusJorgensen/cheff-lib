@@ -1,7 +1,6 @@
-
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useToast } from "./ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { AuthContext } from "@/contexts/AuthContext";
 import { useAuthState } from "@/hooks/useAuthState";
@@ -33,7 +32,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     refreshSession,
   } = useAuthState();
 
-  // Initialize auth state
   useEffect(() => {
     console.log("Starting auth initialization...");
     let mounted = true;
@@ -127,7 +125,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     };
 
-    // Set up auth subscription
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, newSession) => {
       console.log("Auth state changed:", event, newSession);
       if (mounted) {
@@ -135,7 +132,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     });
 
-    // Initialize auth state
     initialize();
 
     return () => {
@@ -144,6 +140,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       subscription.unsubscribe();
     };
   }, []);
+
+  useEffect(() => {
+    if (!isAdmin) return;
+
+    console.log("Setting up pending users subscription for admin");
+    
+    const subscription = supabase
+      .channel('pending-users')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'profiles',
+          filter: 'is_approved=eq.false'
+        },
+        (payload) => {
+          console.log('New pending user:', payload);
+          toast({
+            title: "New User Pending Approval",
+            description: `${payload.new.email} has requested to join the library.`,
+            duration: 5000,
+          });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      console.log("Cleaning up pending users subscription");
+      supabase.removeChannel(subscription);
+    };
+  }, [isAdmin, toast]);
 
   const signOut = async () => {
     try {
@@ -165,7 +193,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   console.log("Auth provider state:", { initializationComplete, session, user });
 
-  // Only show loading state during initial initialization
   if (!initializationComplete) {
     console.log("Showing loading spinner...");
     return (
