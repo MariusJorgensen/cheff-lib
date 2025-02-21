@@ -21,3 +21,13 @@ export interface Book {
   bookDescription?: string | null;
   authorDescription?: string | null;
 }
+
+export interface Comment {
+  id: number;
+  comment: string;
+  createdAt: string;
+  user: {
+    fullName: string | null;
+    email: string;
+  };
+}
