@@ -1,4 +1,6 @@
 
+import { supabase } from "@/integrations/supabase/client";
+
 interface GoogleBooksResponse {
   items?: {
     volumeInfo: {
@@ -16,24 +18,20 @@ interface GoogleBooksResponse {
 const generateDescriptions = async (bookInfo: any) => {
   try {
     console.log('Generating descriptions for:', bookInfo.title);
-    const response = await fetch('https://tmpjozfsriqsezobfvhh.supabase.co/functions/v1/generate-book-descriptions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
+    
+    const { data, error } = await supabase.functions.invoke('generate-book-descriptions', {
+      body: {
         title: bookInfo.title,
         author: bookInfo.authors?.[0] || 'Unknown Author',
         description: bookInfo.description || ''
-      })
+      }
     });
 
-    if (!response.ok) {
-      console.error('Error generating descriptions:', await response.text());
+    if (error) {
+      console.error('Error generating descriptions:', error);
       return null;
     }
 
-    const data = await response.json();
     console.log('Received descriptions:', data);
     return {
       bookDescription: data.bookDescription,
@@ -91,4 +89,3 @@ export const lookupISBN = async (isbn: string): Promise<{
     return null;
   }
 };
-
