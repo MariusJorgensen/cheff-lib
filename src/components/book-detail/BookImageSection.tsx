@@ -26,17 +26,17 @@ export function BookImageSection({ book }: BookImageSectionProps) {
         }}
       />
       <div className="flex-1 space-y-4">
-        <div className="flex items-center gap-2 mb-2">
-          <Badge variant={book.bookType === 'fiction' ? "secondary" : "outline"}>
-            📚 {book.bookType}
-          </Badge>
-        </div>
-        
-        <div className="space-y-1">
+        <div className="space-y-2">
           <div className="flex items-center gap-2 text-muted-foreground">
             <span>📝</span>
             <span>{book.author}</span>
           </div>
+          
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <span>📚</span>
+            <span className="capitalize">{book.bookType}</span>
+          </div>
+
           <div className="text-sm text-muted-foreground/60 pl-6">
             Added by {book.addedBy || 'Unknown'}
             {book.createdAt && (

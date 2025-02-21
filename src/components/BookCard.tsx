@@ -3,7 +3,6 @@ import { Book } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { MapPin } from "lucide-react";
 import { useState } from "react";
 import { BookDetailView } from "./BookDetailView";
 
@@ -32,10 +31,7 @@ export function BookCard({ book, onLend, onReturn }: BookCardProps) {
       >
         <Card className="glass-card transition-transform hover:scale-105 h-[440px] flex flex-col">
           <div className="relative">
-            <div className="absolute top-2 right-2 z-10 flex gap-2">
-              <Badge variant={book.bookType === 'fiction' ? "secondary" : "outline"}>
-                📚 {book.bookType}
-              </Badge>
+            <div className="absolute top-2 right-2 z-10">
               <Badge variant={book.lentTo ? "destructive" : "secondary"}>
                 {book.lentTo ? "On Loan" : "Available"}
               </Badge>
@@ -62,6 +58,11 @@ export function BookCard({ book, onLend, onReturn }: BookCardProps) {
                 <span className="line-clamp-1">{book.author}</span>
               </div>
               
+              <div className="flex items-center gap-2 text-muted-foreground min-h-[1.5rem]">
+                <span className="flex-shrink-0">📚</span>
+                <span className="capitalize">{book.bookType}</span>
+              </div>
+
               <div className="flex items-center gap-2 text-muted-foreground min-h-[1.5rem]">
                 <span className="flex-shrink-0">📍</span>
                 <span>{book.location}</span>
