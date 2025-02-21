@@ -30,8 +30,15 @@ const Index = () => {
     return matchesSearch && matchesFilter;
   });
 
-  const handleAddBook = (title: string, author: string, imageUrl: string, location: 'Stockholm 🇸🇪' | 'Oslo 🇧🇻') => {
-    addBook(title, author, imageUrl, location);
+  const handleAddBook = (
+    title: string, 
+    author: string, 
+    imageUrl: string, 
+    location: 'Stockholm 🇸🇪' | 'Oslo 🇧🇻',
+    bookDescription?: string,
+    authorDescription?: string
+  ) => {
+    addBook(title, author, imageUrl, location, bookDescription, authorDescription);
   };
 
   if (!isApproved && !isAdmin) {

@@ -15,7 +15,14 @@ interface LibraryControlsProps {
   onSearchChange: (value: string) => void;
   filter: string;
   onFilterChange: (value: string) => void;
-  onAddBook: (title: string, author: string, imageUrl: string, location: 'Stockholm 🇸🇪' | 'Oslo 🇧🇻') => void;
+  onAddBook: (
+    title: string, 
+    author: string, 
+    imageUrl: string, 
+    location: 'Stockholm 🇸🇪' | 'Oslo 🇧🇻',
+    bookDescription?: string,
+    authorDescription?: string
+  ) => void;
 }
 
 export function LibraryControls({
