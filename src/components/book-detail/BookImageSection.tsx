@@ -1,6 +1,5 @@
 
 import { Book } from "@/types";
-import { BookOpen, User, Calendar, Info } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import {
   Accordion,
@@ -8,6 +7,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { Badge } from "@/components/ui/badge";
 
 interface BookImageSectionProps {
   book: Book;
@@ -26,9 +26,15 @@ export function BookImageSection({ book }: BookImageSectionProps) {
         }}
       />
       <div className="flex-1 space-y-4">
+        <div className="flex items-center gap-2 mb-2">
+          <Badge variant={book.bookType === 'fiction' ? "secondary" : "outline"}>
+            📚 {book.bookType}
+          </Badge>
+        </div>
+        
         <div className="space-y-1">
           <div className="flex items-center gap-2 text-muted-foreground">
-            <BookOpen className="h-4 w-4" />
+            <span>📝</span>
             <span>{book.author}</span>
           </div>
           <div className="text-sm text-muted-foreground/60 pl-6">
@@ -85,7 +91,7 @@ export function BookImageSection({ book }: BookImageSectionProps) {
         {book.lentTo && (
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-muted-foreground">
-              <User className="h-4 w-4" />
+              <span>👤</span>
               <span>
                 Borrowed by: {book.lentTo}
                 {book.loanDate && (

@@ -3,7 +3,7 @@ import { Book } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { BookOpen, MapPin } from "lucide-react";
+import { MapPin } from "lucide-react";
 import { useState } from "react";
 import { BookDetailView } from "./BookDetailView";
 
@@ -32,7 +32,10 @@ export function BookCard({ book, onLend, onReturn }: BookCardProps) {
       >
         <Card className="glass-card transition-transform hover:scale-105 h-[440px] flex flex-col">
           <div className="relative">
-            <div className="absolute top-2 right-2 z-10">
+            <div className="absolute top-2 right-2 z-10 flex gap-2">
+              <Badge variant={book.bookType === 'fiction' ? "secondary" : "outline"}>
+                📚 {book.bookType}
+              </Badge>
               <Badge variant={book.lentTo ? "destructive" : "secondary"}>
                 {book.lentTo ? "On Loan" : "Available"}
               </Badge>
@@ -55,12 +58,12 @@ export function BookCard({ book, onLend, onReturn }: BookCardProps) {
           <CardContent className="flex-1 flex flex-col justify-between">
             <div className="space-y-4">
               <div className="flex items-center gap-2 text-muted-foreground min-h-[1.5rem]">
-                <BookOpen className="h-4 w-4 flex-shrink-0" />
+                <span className="flex-shrink-0">📝</span>
                 <span className="line-clamp-1">{book.author}</span>
               </div>
               
               <div className="flex items-center gap-2 text-muted-foreground min-h-[1.5rem]">
-                <MapPin className="h-4 w-4 flex-shrink-0" />
+                <span className="flex-shrink-0">📍</span>
                 <span>{book.location}</span>
               </div>
             </div>
