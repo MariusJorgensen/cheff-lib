@@ -23,7 +23,9 @@ const Index = () => {
       filter === "all" ||
       (filter === "available" && !book.lentTo) ||
       (filter === "borrowed" && book.lentTo) ||
-      (filter === "my-loans" && book.lentTo?.toLowerCase() === user?.email?.toLowerCase());
+      (filter === "my-loans" && book.loans?.some(loan => 
+        !loan.returned_at && loan.user_id === user?.id
+      ));
 
     return matchesSearch && matchesFilter;
   });
