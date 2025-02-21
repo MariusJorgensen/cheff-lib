@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -100,7 +101,7 @@ export function AddBookDialog({ onAddBook }: AddBookDialogProps) {
               const isbn = result.getText();
               
               // Clean up
-              codeReader.stopStreams(); // Changed from reset() to stopStreams()
+              codeReader.stop();
               const videoPreview = document.querySelector('.barcode-video-preview');
               const closeButton = document.querySelector('.barcode-close-button');
               if (videoPreview) document.body.removeChild(videoPreview);
@@ -134,7 +135,7 @@ export function AddBookDialog({ onAddBook }: AddBookDialogProps) {
 
       // Handle close button click
       closeButton.onclick = () => {
-        codeReader.stopStreams(); // Changed from reset() to stopStreams()
+        codeReader.stop();
         const videoPreview = document.querySelector('.barcode-video-preview');
         const closeButton = document.querySelector('.barcode-close-button');
         if (videoPreview) document.body.removeChild(videoPreview);
