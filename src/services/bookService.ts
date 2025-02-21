@@ -85,7 +85,8 @@ export const fetchBooks = async (userId: string | undefined = undefined) => {
         created_at: loan.created_at
       })),
       bookDescription: book.book_description,
-      authorDescription: book.author_description
+      authorDescription: book.author_description,
+      bookType: book.book_type || 'non-fiction' // Added this line to include book type
     } as Book;
   });
 
