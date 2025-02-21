@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -30,7 +29,8 @@ interface AddBookDialogProps {
     imageUrl: string, 
     location: 'Stockholm 🇸🇪' | 'Oslo 🇧🇻',
     bookDescription?: string,
-    authorDescription?: string
+    authorDescription?: string,
+    bookType?: 'fiction' | 'non-fiction'
   ) => void;
 }
 
@@ -43,13 +43,13 @@ export function AddBookDialog({ onAddBook }: AddBookDialogProps) {
   const [location, setLocation] = useState<'Stockholm 🇸🇪' | 'Oslo 🇧🇻'>('Oslo 🇧🇻');
   const [bookDescription, setBookDescription] = useState("");
   const [authorDescription, setAuthorDescription] = useState("");
+  const [bookType, setBookType] = useState<'fiction' | 'non-fiction'>('non-fiction');
   const [isLoading, setIsLoading] = useState(false);
   const [isGeneratingDescriptions, setIsGeneratingDescriptions] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const { toast } = useToast();
 
   const cleanupScanner = (codeReader: BrowserMultiFormatReader) => {
-    // First, stop the video stream
     const videoElement = document.querySelector('video');
     if (videoElement && videoElement.srcObject) {
       const stream = videoElement.srcObject as MediaStream;
@@ -57,7 +57,6 @@ export function AddBookDialog({ onAddBook }: AddBookDialogProps) {
       videoElement.srcObject = null;
     }
     
-    // Then remove the UI elements
     const videoPreview = document.querySelector('.barcode-video-preview');
     const closeButton = document.querySelector('.barcode-close-button');
     if (videoPreview) document.body.removeChild(videoPreview);
@@ -119,7 +118,6 @@ export function AddBookDialog({ onAddBook }: AddBookDialogProps) {
               hasDetectedCode = true; // Prevent multiple detections
               const isbn = result.getText();
               
-              // Clean up before processing result
               cleanupScanner(codeReader);
               setIsScanning(false);
               
@@ -147,7 +145,6 @@ export function AddBookDialog({ onAddBook }: AddBookDialogProps) {
         });
       }
 
-      // Handle close button click
       closeButton.onclick = () => {
         cleanupScanner(codeReader);
         setIsScanning(false);
@@ -176,6 +173,7 @@ export function AddBookDialog({ onAddBook }: AddBookDialogProps) {
         setTitle(bookData.title);
         setAuthor(bookData.author);
         setImageUrl(bookData.imageUrl);
+        setBookType(bookData.bookType);
         
         toast({
           title: "Book found",
@@ -214,13 +212,14 @@ export function AddBookDialog({ onAddBook }: AddBookDialogProps) {
     e.preventDefault();
     if (title && author && location) {
       const finalImageUrl = imageUrl || "https://placehold.co/400x600?text=No+Cover+Available";
-      onAddBook(title, author, finalImageUrl, location, bookDescription, authorDescription);
+      onAddBook(title, author, finalImageUrl, location, bookDescription, authorDescription, bookType);
       setIsbn("");
       setTitle("");
       setAuthor("");
       setImageUrl("");
       setBookDescription("");
       setAuthorDescription("");
+      setBookType('non-fiction');
       setLocation('Oslo 🇧🇻');
       setOpen(false);
     }
@@ -297,6 +296,22 @@ export function AddBookDialog({ onAddBook }: AddBookDialogProps) {
               required
               disabled={isLoading}
             />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="bookType">Book Type</Label>
+            <Select 
+              value={bookType} 
+              onValueChange={(value) => setBookType(value as 'fiction' | 'non-fiction')}
+              disabled={isLoading}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select book type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="fiction">Fiction</SelectItem>
+                <SelectItem value="non-fiction">Non-Fiction</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div className="space-y-2">
             <Label htmlFor="bookDescription" className="flex items-center gap-2">

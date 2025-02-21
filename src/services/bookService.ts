@@ -98,7 +98,8 @@ export const addBookToLibrary = async (
   imageUrl: string,
   location: 'Stockholm 🇸🇪' | 'Oslo 🇧🇻',
   bookDescription?: string,
-  authorDescription?: string
+  authorDescription?: string,
+  bookType: 'fiction' | 'non-fiction' = 'non-fiction'
 ) => {
   const { data: { user } } = await supabase.auth.getUser();
   
@@ -112,6 +113,7 @@ export const addBookToLibrary = async (
         location,
         book_description: bookDescription,
         author_description: authorDescription,
+        book_type: bookType,
         added_by_user_id: user?.id
       }
     ])
@@ -133,6 +135,7 @@ export const addBookToLibrary = async (
     location: data.location,
     bookDescription: data.book_description,
     authorDescription: data.author_description,
+    bookType: data.book_type,
     addedBy: null
   } as Book;
 };

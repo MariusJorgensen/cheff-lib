@@ -43,12 +43,35 @@ const generateDescriptions = async (bookInfo: any) => {
   }
 };
 
+const determineBookType = async (bookInfo: any): Promise<'fiction' | 'non-fiction'> => {
+  try {
+    const { data, error } = await supabase.functions.invoke('determine-book-type', {
+      body: {
+        title: bookInfo.title,
+        description: bookInfo.description || '',
+        author: bookInfo.authors?.[0] || 'Unknown Author'
+      }
+    });
+
+    if (error || !data) {
+      console.error('Error determining book type:', error);
+      return 'non-fiction'; // Default to non-fiction if there's an error
+    }
+
+    return data.bookType;
+  } catch (error) {
+    console.error('Error determining book type:', error);
+    return 'non-fiction';
+  }
+};
+
 export const lookupISBN = async (isbn: string): Promise<{
   title: string;
   author: string;
   imageUrl: string;
   bookDescription?: string;
   authorDescription?: string;
+  bookType: 'fiction' | 'non-fiction';
 } | null> => {
   try {
     // Remove any hyphens or spaces from ISBN
@@ -75,14 +98,18 @@ export const lookupISBN = async (isbn: string): Promise<{
       imageUrl: bookInfo.imageLinks?.thumbnail?.replace('http://', 'https://') || 'https://placehold.co/400x600?text=No+Cover+Available',
     };
 
-    // Then generate descriptions
-    const descriptions = await generateDescriptions(bookInfo);
+    // Generate descriptions and determine book type in parallel
+    const [descriptions, bookType] = await Promise.all([
+      generateDescriptions(bookInfo),
+      determineBookType(bookInfo)
+    ]);
     
     // Return complete info
     return {
       ...basicInfo,
       bookDescription: descriptions?.bookDescription,
       authorDescription: descriptions?.authorDescription,
+      bookType
     };
   } catch (error) {
     console.error('Error looking up ISBN:', error);

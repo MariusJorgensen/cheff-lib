@@ -37,10 +37,11 @@ export function useBooks(user: User | null) {
     imageUrl: string, 
     location: 'Stockholm 🇸🇪' | 'Oslo 🇧🇻',
     bookDescription?: string,
-    authorDescription?: string
+    authorDescription?: string,
+    bookType: 'fiction' | 'non-fiction' = 'non-fiction'
   ) => {
     try {
-      await addBookToLibrary(title, author, imageUrl, location, bookDescription, authorDescription);
+      await addBookToLibrary(title, author, imageUrl, location, bookDescription, authorDescription, bookType);
       toast({
         title: "Success",
         description: `${title} has been added to the library.`,

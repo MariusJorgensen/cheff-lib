@@ -170,6 +170,7 @@ export type Database = {
           author_description: string | null
           average_rating: number | null
           book_description: string | null
+          book_type: Database["public"]["Enums"]["book_type"] | null
           created_at: string | null
           id: number
           image_url: string | null
@@ -184,6 +185,7 @@ export type Database = {
           author_description?: string | null
           average_rating?: number | null
           book_description?: string | null
+          book_type?: Database["public"]["Enums"]["book_type"] | null
           created_at?: string | null
           id?: never
           image_url?: string | null
@@ -198,6 +200,7 @@ export type Database = {
           author_description?: string | null
           average_rating?: number | null
           book_description?: string | null
+          book_type?: Database["public"]["Enums"]["book_type"] | null
           created_at?: string | null
           id?: never
           image_url?: string | null
@@ -310,6 +313,7 @@ export type Database = {
     }
     Enums: {
       book_location: "Stockholm 🇸🇪" | "Oslo 🇧🇻"
+      book_type: "fiction" | "non-fiction"
     }
     CompositeTypes: {
       [_ in never]: never
