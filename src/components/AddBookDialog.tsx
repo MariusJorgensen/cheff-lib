@@ -49,18 +49,19 @@ export function AddBookDialog({ onAddBook }: AddBookDialogProps) {
   const { toast } = useToast();
 
   const cleanupScanner = (codeReader: BrowserMultiFormatReader) => {
-    const videoPreview = document.querySelector('.barcode-video-preview');
-    const closeButton = document.querySelector('.barcode-close-button');
-    if (videoPreview) document.body.removeChild(videoPreview);
-    if (closeButton) document.body.removeChild(closeButton);
-    
-    // Stop the video stream
+    // First, stop the video stream
     const videoElement = document.querySelector('video');
     if (videoElement && videoElement.srcObject) {
       const stream = videoElement.srcObject as MediaStream;
       stream.getTracks().forEach(track => track.stop());
       videoElement.srcObject = null;
     }
+    
+    // Then remove the UI elements
+    const videoPreview = document.querySelector('.barcode-video-preview');
+    const closeButton = document.querySelector('.barcode-close-button');
+    if (videoPreview) document.body.removeChild(videoPreview);
+    if (closeButton) document.body.removeChild(closeButton);
   };
 
   const startScanning = async () => {
@@ -107,24 +108,27 @@ export function AddBookDialog({ onAddBook }: AddBookDialogProps) {
       closeButton.className = 'barcode-close-button fixed top-4 right-4 text-white text-4xl z-[52] w-12 h-12 flex items-center justify-center rounded-full bg-black bg-opacity-50 hover:bg-opacity-75';
       document.body.appendChild(closeButton);
 
+      let hasDetectedCode = false;
+
       try {
         await codeReader.decodeFromVideoDevice(
           undefined, // Use default camera
           video,
           async (result) => {
-            if (result) {
+            if (result && !hasDetectedCode) {
+              hasDetectedCode = true; // Prevent multiple detections
               const isbn = result.getText();
               
-              // Clean up
+              // Clean up before processing result
               cleanupScanner(codeReader);
               setIsScanning(false);
-              setIsbn(isbn);
               
               toast({
                 title: "Success!",
                 description: `ISBN detected: ${isbn}`,
               });
               
+              setIsbn(isbn);
               handleIsbnLookup(isbn);
             }
           }
