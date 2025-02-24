@@ -1,6 +1,6 @@
 
 import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { AuthContext } from "@/contexts/AuthContext";
@@ -9,6 +9,7 @@ import { checkApprovalStatus } from "@/services/approvalService";
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const {
     session,
@@ -110,7 +111,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   console.log("Auth provider state:", { initializationComplete, session, user });
 
-  if (!initializationComplete) {
+  // Don't show loading spinner on auth route
+  if (!initializationComplete && location.pathname !== '/auth') {
     console.log("Showing loading spinner...");
     return (
       <div className="min-h-screen flex items-center justify-center">
