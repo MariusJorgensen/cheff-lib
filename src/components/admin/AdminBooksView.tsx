@@ -1,6 +1,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 import {
   Table,
   TableBody,
@@ -17,6 +18,7 @@ import { Trash2, Map, Book as BookIcon } from "lucide-react";
 export function AdminBooksView() {
   const [books, setBooks] = useState<Book[]>([]);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const fetchBooks = async () => {
     const { data, error } = await supabase
@@ -68,7 +70,9 @@ export function AdminBooksView() {
     setBooks(processedBooks);
   };
 
-  const handleDeleteBook = async (bookId: number) => {
+  const handleDeleteBook = async (bookId: number, event: React.MouseEvent) => {
+    event.stopPropagation(); // Prevent row click when clicking delete button
+    
     const { error } = await supabase
       .from('books')
       .delete()
@@ -89,6 +93,10 @@ export function AdminBooksView() {
     });
 
     fetchBooks();
+  };
+
+  const handleRowClick = (book: Book) => {
+    navigate(`/?bookId=${book.id}`);
   };
 
   useEffect(() => {
@@ -112,7 +120,11 @@ export function AdminBooksView() {
           </TableHeader>
           <TableBody>
             {books.map((book) => (
-              <TableRow key={book.id}>
+              <TableRow 
+                key={book.id}
+                onClick={() => handleRowClick(book)}
+                className="cursor-pointer hover:bg-accent"
+              >
                 <TableCell className="font-medium">{book.title}</TableCell>
                 <TableCell>{book.author}</TableCell>
                 <TableCell className="capitalize">{book.bookType}</TableCell>
@@ -131,7 +143,7 @@ export function AdminBooksView() {
                   <Button 
                     variant="ghost" 
                     size="icon"
-                    onClick={() => handleDeleteBook(book.id)}
+                    onClick={(e) => handleDeleteBook(book.id, e)}
                     className="text-destructive hover:text-destructive"
                   >
                     <Trash2 className="h-4 w-4" />
@@ -146,7 +158,11 @@ export function AdminBooksView() {
       {/* Mobile view */}
       <div className="sm:hidden space-y-4">
         {books.map((book) => (
-          <div key={book.id} className="bg-card rounded-lg border p-4 space-y-3">
+          <div 
+            key={book.id} 
+            className="bg-card rounded-lg border p-4 space-y-3 cursor-pointer hover:bg-accent/50"
+            onClick={() => handleRowClick(book)}
+          >
             <div className="flex justify-between items-start gap-4">
               <div className="min-w-0 flex-1">
                 <h3 className="font-medium truncate">{book.title}</h3>
@@ -155,7 +171,7 @@ export function AdminBooksView() {
               <Button 
                 variant="ghost" 
                 size="icon"
-                onClick={() => handleDeleteBook(book.id)}
+                onClick={(e) => handleDeleteBook(book.id, e)}
                 className="text-destructive hover:text-destructive shrink-0"
               >
                 <Trash2 className="h-4 w-4" />
