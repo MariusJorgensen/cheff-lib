@@ -42,7 +42,6 @@ export function useBooks(user: User | null) {
   ) => {
     try {
       await addBookToLibrary(title, author, imageUrl, location, bookDescription, authorDescription, bookType);
-      await refreshBooks(); // Refresh books after adding
       toast({
         title: "Success",
         description: `${title} has been added to the library.`,
@@ -60,7 +59,6 @@ export function useBooks(user: User | null) {
   const lendBook = async (id: number, borrowerName: string) => {
     try {
       await lendBookToUser(id, borrowerName);
-      await refreshBooks(); // Refresh books after lending
       toast({
         title: "Success",
         description: `Book has been lent successfully.`,
@@ -78,7 +76,6 @@ export function useBooks(user: User | null) {
   const returnBook = async (id: number) => {
     try {
       await returnBookToLibrary(id);
-      await refreshBooks(); // Refresh books after returning
       toast({
         title: "Success",
         description: "Book has been returned to the library.",

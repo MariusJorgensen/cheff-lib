@@ -1,8 +1,6 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useNavigate, useLocation } from "react-router-dom";
-import { useAuth } from "@/components/AuthProvider";
 import {
   Table,
   TableBody,
@@ -19,9 +17,6 @@ import { Trash2, Map, Book as BookIcon } from "lucide-react";
 export function AdminBooksView() {
   const [books, setBooks] = useState<Book[]>([]);
   const { toast } = useToast();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { isAdmin, isApproved } = useAuth();
 
   const fetchBooks = async () => {
     const { data, error } = await supabase
@@ -29,15 +24,9 @@ export function AdminBooksView() {
       .select(`
         *,
         loans (
-          id,
           lent_to,
           created_at,
-          returned_at,
-          user_id,
-          profiles (
-            full_name,
-            email
-          )
+          returned_at
         )
       `)
       .order('created_at', { ascending: false });
@@ -47,35 +36,25 @@ export function AdminBooksView() {
       return;
     }
 
-    const processedBooks = data.map(book => {
-      const activeLoan = book.loans?.find((loan: any) => !loan.returned_at);
-      const loanUserProfile = activeLoan?.profiles;
-      const loanUserName = loanUserProfile 
-        ? (loanUserProfile.full_name || loanUserProfile.email) 
-        : activeLoan?.lent_to || null;
-
-      return {
-        id: book.id,
-        title: book.title,
-        author: book.author,
-        imageUrl: book.image_url || '',
-        bookType: book.book_type || 'non-fiction',
-        location: book.location || 'Oslo 🇧🇻',
-        lentTo: loanUserName,
-        averageRating: book.average_rating || null,
-        aiSummary: book.ai_summary || null,
-        bookDescription: book.book_description || null,
-        authorDescription: book.author_description || null,
-        loans: book.loans || [],
-      } as Book;
-    });
+    const processedBooks = data.map(book => ({
+      id: book.id,
+      title: book.title,
+      author: book.author,
+      imageUrl: book.image_url || '',
+      bookType: book.book_type || 'non-fiction',
+      location: book.location || 'Oslo 🇧🇻',
+      lentTo: book.loans?.find((loan: any) => !loan.returned_at)?.lent_to || null,
+      averageRating: book.average_rating || null,
+      aiSummary: book.ai_summary || null,
+      bookDescription: book.book_description || null,
+      authorDescription: book.author_description || null,
+      loans: book.loans || [],
+    })) as Book[];
 
     setBooks(processedBooks);
   };
 
-  const handleDeleteBook = async (bookId: number, event: React.MouseEvent) => {
-    event.stopPropagation(); // Prevent row click when clicking delete button
-    
+  const handleDeleteBook = async (bookId: number) => {
     const { error } = await supabase
       .from('books')
       .delete()
@@ -98,36 +77,9 @@ export function AdminBooksView() {
     fetchBooks();
   };
 
-  const handleRowClick = (book: Book) => {
-    // Store the intended destination
-    if (!isAdmin || !isApproved) {
-      sessionStorage.setItem('redirectAfterAuth', `/?bookId=${book.id}`);
-      navigate('/auth');
-      return;
-    }
-    
-    // If we're already authenticated and approved, navigate directly
-    if (location.pathname !== '/') {
-      navigate('/', { replace: true }); // First ensure we're on the home route
-      setTimeout(() => {
-        navigate(`/?bookId=${book.id}`);
-      }, 100);
-    } else {
-      navigate(`/?bookId=${book.id}`);
-    }
-  };
-
   useEffect(() => {
-    if (!isAdmin) {
-      navigate('/auth');
-      return;
-    }
     fetchBooks();
-  }, [isAdmin, navigate]);
-
-  if (!isAdmin) {
-    return null;
-  }
+  }, []);
 
   return (
     <div>
@@ -146,11 +98,7 @@ export function AdminBooksView() {
           </TableHeader>
           <TableBody>
             {books.map((book) => (
-              <TableRow 
-                key={book.id}
-                onClick={() => handleRowClick(book)}
-                className="cursor-pointer hover:bg-accent"
-              >
+              <TableRow key={book.id}>
                 <TableCell className="font-medium">{book.title}</TableCell>
                 <TableCell>{book.author}</TableCell>
                 <TableCell className="capitalize">{book.bookType}</TableCell>
@@ -169,7 +117,7 @@ export function AdminBooksView() {
                   <Button 
                     variant="ghost" 
                     size="icon"
-                    onClick={(e) => handleDeleteBook(book.id, e)}
+                    onClick={() => handleDeleteBook(book.id)}
                     className="text-destructive hover:text-destructive"
                   >
                     <Trash2 className="h-4 w-4" />
@@ -184,11 +132,7 @@ export function AdminBooksView() {
       {/* Mobile view */}
       <div className="sm:hidden space-y-4">
         {books.map((book) => (
-          <div 
-            key={book.id} 
-            className="bg-card rounded-lg border p-4 space-y-3 cursor-pointer hover:bg-accent/50"
-            onClick={() => handleRowClick(book)}
-          >
+          <div key={book.id} className="bg-card rounded-lg border p-4 space-y-3">
             <div className="flex justify-between items-start gap-4">
               <div className="min-w-0 flex-1">
                 <h3 className="font-medium truncate">{book.title}</h3>
@@ -197,7 +141,7 @@ export function AdminBooksView() {
               <Button 
                 variant="ghost" 
                 size="icon"
-                onClick={(e) => handleDeleteBook(book.id, e)}
+                onClick={() => handleDeleteBook(book.id)}
                 className="text-destructive hover:text-destructive shrink-0"
               >
                 <Trash2 className="h-4 w-4" />
