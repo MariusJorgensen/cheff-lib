@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/components/AuthProvider";
 import {
   Table,
   TableBody,
@@ -19,6 +20,7 @@ export function AdminBooksView() {
   const [books, setBooks] = useState<Book[]>([]);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { isAdmin } = useAuth();
 
   const fetchBooks = async () => {
     const { data, error } = await supabase
@@ -96,12 +98,24 @@ export function AdminBooksView() {
   };
 
   const handleRowClick = (book: Book) => {
-    navigate(`/?bookId=${book.id}`);
+    if (!isAdmin) {
+      navigate('/auth');
+      return;
+    }
+    navigate(`/books/${book.id}`);
   };
 
   useEffect(() => {
+    if (!isAdmin) {
+      navigate('/auth');
+      return;
+    }
     fetchBooks();
-  }, []);
+  }, [isAdmin, navigate]);
+
+  if (!isAdmin) {
+    return null;
+  }
 
   return (
     <div>
