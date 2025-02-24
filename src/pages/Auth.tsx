@@ -47,10 +47,9 @@ const Auth = () => {
         <div className="text-center">
           <h1 className="text-4xl font-bold flex items-center justify-center gap-1">
             <img 
-              src="/c-logo.png" 
+              src="/lovable-uploads/a3896883-856c-4cab-85c0-fad540b10877.png" 
               alt="C Logo" 
-              className="h-10 w-10"
-              style={{ marginRight: '-0.25rem' }}
+              className="h-10 w-10 dark:invert"
             />
             <span className="bg-gradient-to-r from-[#E56962] to-[#3941E8] bg-clip-text text-transparent">
               heff.lib
