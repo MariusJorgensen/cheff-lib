@@ -7,7 +7,6 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useState } from "react";
 
@@ -20,11 +19,11 @@ export function BookImageSection({ book }: BookImageSectionProps) {
 
   return (
     <>
-      <div className="flex gap-4">
+      <div className="flex flex-col md:flex-row md:gap-4">
         <img
           src={book.imageUrl}
           alt={book.title}
-          className="h-48 w-36 object-cover rounded-lg cursor-zoom-in transition-transform hover:scale-105"
+          className="w-full md:w-36 h-64 md:h-48 object-cover rounded-lg cursor-zoom-in transition-transform hover:scale-105 mb-4 md:mb-0"
           onClick={() => setShowFullImage(true)}
           onError={(e) => {
             const target = e.target as HTMLImageElement;
