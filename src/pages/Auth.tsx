@@ -49,7 +49,7 @@ const Auth = () => {
             <img 
               src="/lovable-uploads/a3896883-856c-4cab-85c0-fad540b10877.png" 
               alt="C Logo" 
-              className="h-10 w-10 dark:invert"
+              className="h-10 w-10 dark:invert transform -translate-y-1 translate-x-0.5"
             />
             <span className="bg-gradient-to-r from-[#E56962] to-[#3941E8] bg-clip-text text-transparent">
               heff.lib
