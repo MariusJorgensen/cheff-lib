@@ -18,8 +18,16 @@ interface LibraryHeaderProps {
 export function LibraryHeader({ userEmail, onSignOut }: LibraryHeaderProps) {
   return (
     <div className="flex justify-between items-center">
-      <h1 className="text-4xl font-bold bg-gradient-to-r from-[#E56962] to-[#3941E8] bg-clip-text text-transparent">
-        cheff.lib
+      <h1 className="text-4xl font-bold flex items-center gap-1">
+        <img 
+          src="/c-logo.png" 
+          alt="C Logo" 
+          className="h-10 w-10"
+          style={{ marginRight: '-0.25rem' }}
+        />
+        <span className="bg-gradient-to-r from-[#E56962] to-[#3941E8] bg-clip-text text-transparent">
+          heff.lib
+        </span>
       </h1>
       <div className="flex items-center gap-4">
         <FeedbackDialog />

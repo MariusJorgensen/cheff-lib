@@ -45,7 +45,17 @@ const Auth = () => {
     <div className="min-h-screen flex items-center justify-center p-4">
       <div className="w-full max-w-md space-y-8">
         <div className="text-center">
-          <h1 className="text-4xl font-bold">cheff.lib</h1>
+          <h1 className="text-4xl font-bold flex items-center justify-center gap-1">
+            <img 
+              src="/c-logo.png" 
+              alt="C Logo" 
+              className="h-10 w-10"
+              style={{ marginRight: '-0.25rem' }}
+            />
+            <span className="bg-gradient-to-r from-[#E56962] to-[#3941E8] bg-clip-text text-transparent">
+              heff.lib
+            </span>
+          </h1>
           <p className="mt-2 text-muted-foreground">
             Sign in to continue
           </p>
