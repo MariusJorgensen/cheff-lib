@@ -27,6 +27,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     refreshSession,
   } = useAuthState();
 
+  // Add synchronization across tabs
+  useEffect(() => {
+    const syncTabs = (event: StorageEvent) => {
+      if (event.key === 'supabase.auth.token') {
+        refreshSession();
+      }
+    };
+
+    window.addEventListener('storage', syncTabs);
+    return () => window.removeEventListener('storage', syncTabs);
+  }, [refreshSession]);
+
   useEffect(() => {
     console.log("Starting auth initialization...");
     let mounted = true;
@@ -76,6 +88,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log("Auth state changed:", event, newSession);
       if (!mounted) return;
 
+      if (event === 'SIGNED_OUT') {
+        setSession(null);
+        setUser(null);
+        setIsApproved(false);
+        setIsAdmin(false);
+        return;
+      }
+
       try {
         if (newSession?.user) {
           setSession(newSession);
@@ -84,11 +104,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const { approved, isAdmin: isAdminUser } = await checkApprovalStatus(newSession.user.id);
           setIsApproved(approved);
           setIsAdmin(isAdminUser);
-        } else {
-          setSession(null);
-          setUser(null);
-          setIsApproved(false);
-          setIsAdmin(false);
         }
       } catch (error) {
         console.error("Error in auth state change:", error);
@@ -100,12 +115,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     });
 
+    // Initialize immediately and also refresh when visibility changes
     initialize();
+    
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        refreshSession();
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
       console.log("Cleaning up auth provider");
       mounted = false;
       subscription.unsubscribe();
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, []);
 
