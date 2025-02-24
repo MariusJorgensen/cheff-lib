@@ -23,7 +23,7 @@ export const fetchBooks = async (userId: string | undefined = undefined) => {
     .from('books')
     .select(`
       *,
-      profiles (
+      profiles!books_added_by_user_id_fkey (
         full_name,
         email
       ),
@@ -32,7 +32,11 @@ export const fetchBooks = async (userId: string | undefined = undefined) => {
         user_id,
         returned_at,
         created_at,
-        lent_to
+        lent_to,
+        profiles!loans_user_id_fkey (
+          full_name,
+          email
+        )
       ),
       book_ratings (
         rating,
@@ -62,13 +66,14 @@ export const fetchBooks = async (userId: string | undefined = undefined) => {
   // Process the books data
   const processedBooks = booksData.map(book => {
     const activeLoan = book.loans?.find((loan: any) => !loan.returned_at);
+    const loanUserName = activeLoan?.profiles?.full_name || activeLoan?.profiles?.email || activeLoan?.lent_to || null;
     
     return {
       id: book.id,
       title: book.title,
       author: book.author,
       imageUrl: book.image_url,
-      lentTo: activeLoan?.lent_to || null,
+      lentTo: loanUserName,
       averageRating: book.average_rating,
       aiSummary: book.ai_summary,
       addedBy: book.profiles?.full_name || book.profiles?.email || null,
@@ -81,12 +86,12 @@ export const fetchBooks = async (userId: string | undefined = undefined) => {
       loans: book.loans?.map(loan => ({
         user_id: loan.user_id,
         returned_at: loan.returned_at,
-        lent_to: loan.lent_to,
+        lent_to: loan.profiles?.full_name || loan.profiles?.email || loan.lent_to,
         created_at: loan.created_at
       })),
       bookDescription: book.book_description,
       authorDescription: book.author_description,
-      bookType: book.book_type || 'non-fiction' // Added this line to include book type
+      bookType: book.book_type || 'non-fiction'
     } as Book;
   });
 
