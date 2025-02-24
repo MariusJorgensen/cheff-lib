@@ -9,7 +9,23 @@ import { BookReactions } from "./book-detail/BookReactions";
 import { BookComments } from "./book-detail/BookComments";
 import { BookLendingControls } from "./book-detail/BookLendingControls";
 import { Button } from "./ui/button";
-import { MapPin } from "lucide-react";
+import { MapPin, Edit } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface BookDetailViewProps {
   book: Book;
@@ -22,6 +38,8 @@ export function BookDetailView({ book, onLend, onReturn, onClose }: BookDetailVi
   const [comments, setComments] = useState<Comment[]>([]);
   const [isLoadingComments, setIsLoadingComments] = useState(false);
   const [visibleComments, setVisibleComments] = useState(2);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [editedBook, setEditedBook] = useState(book);
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -153,6 +171,40 @@ export function BookDetailView({ book, onLend, onReturn, onClose }: BookDetailVi
     }
   };
 
+  const handleSaveEdit = async () => {
+    try {
+      const { error } = await supabase
+        .from('books')
+        .update({
+          title: editedBook.title,
+          author: editedBook.author,
+          image_url: editedBook.imageUrl,
+          location: editedBook.location,
+          book_description: editedBook.bookDescription,
+          author_description: editedBook.authorDescription,
+          book_type: editedBook.bookType,
+        })
+        .eq('id', book.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Book updated successfully!",
+      });
+      setShowEditDialog(false);
+      // This will trigger a re-fetch of the books list
+      window.location.reload();
+    } catch (error) {
+      console.error('Error updating book:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update book. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   useEffect(() => {
     fetchComments();
   }, []);
@@ -163,9 +215,20 @@ export function BookDetailView({ book, onLend, onReturn, onClose }: BookDetailVi
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-2 text-muted-foreground mb-4">
-        <MapPin className="h-4 w-4" />
-        <span>{book.location}</span>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <MapPin className="h-4 w-4" />
+          <span>{book.location}</span>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setShowEditDialog(true)}
+          className="gap-2"
+        >
+          <Edit className="h-4 w-4" />
+          Edit Book
+        </Button>
       </div>
 
       <BookLendingControls
@@ -187,6 +250,7 @@ export function BookDetailView({ book, onLend, onReturn, onClose }: BookDetailVi
           comments={comments.slice(0, visibleComments)}
           isLoading={isLoadingComments}
           onAddComment={handleAddComment}
+          bookId={book.id}
         />
         {comments.length > visibleComments && (
           <Button 
@@ -198,6 +262,110 @@ export function BookDetailView({ book, onLend, onReturn, onClose }: BookDetailVi
           </Button>
         )}
       </div>
+
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Edit Book</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="title">Title</Label>
+                <Input
+                  id="title"
+                  value={editedBook.title}
+                  onChange={(e) => setEditedBook(prev => ({ ...prev, title: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="author">Author</Label>
+                <Input
+                  id="author"
+                  value={editedBook.author}
+                  onChange={(e) => setEditedBook(prev => ({ ...prev, author: e.target.value }))}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="imageUrl">Image URL</Label>
+              <Input
+                id="imageUrl"
+                value={editedBook.imageUrl}
+                onChange={(e) => setEditedBook(prev => ({ ...prev, imageUrl: e.target.value }))}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="location">Location</Label>
+                <Select
+                  value={editedBook.location}
+                  onValueChange={(value: 'Stockholm 🇸🇪' | 'Oslo 🇧🇻') => 
+                    setEditedBook(prev => ({ ...prev, location: value }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select location" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Oslo 🇧🇻">Oslo 🇧🇻</SelectItem>
+                    <SelectItem value="Stockholm 🇸🇪">Stockholm 🇸🇪</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="bookType">Book Type</Label>
+                <Select
+                  value={editedBook.bookType}
+                  onValueChange={(value: 'fiction' | 'non-fiction') => 
+                    setEditedBook(prev => ({ ...prev, bookType: value }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="fiction">Fiction</SelectItem>
+                    <SelectItem value="non-fiction">Non-Fiction</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="bookDescription">Book Description</Label>
+              <Textarea
+                id="bookDescription"
+                value={editedBook.bookDescription || ''}
+                onChange={(e) => setEditedBook(prev => ({ ...prev, bookDescription: e.target.value }))}
+                rows={4}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="authorDescription">Author Description</Label>
+              <Textarea
+                id="authorDescription"
+                value={editedBook.authorDescription || ''}
+                onChange={(e) => setEditedBook(prev => ({ ...prev, authorDescription: e.target.value }))}
+                rows={4}
+              />
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setShowEditDialog(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleSaveEdit}>
+                Save Changes
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
