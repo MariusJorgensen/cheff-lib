@@ -1,7 +1,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/components/AuthProvider";
 import {
   Table,
@@ -20,7 +20,8 @@ export function AdminBooksView() {
   const [books, setBooks] = useState<Book[]>([]);
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { isAdmin } = useAuth();
+  const location = useLocation();
+  const { isAdmin, isApproved } = useAuth();
 
   const fetchBooks = async () => {
     const { data, error } = await supabase
@@ -98,11 +99,22 @@ export function AdminBooksView() {
   };
 
   const handleRowClick = (book: Book) => {
-    if (!isAdmin) {
+    // Store the intended destination
+    if (!isAdmin || !isApproved) {
+      sessionStorage.setItem('redirectAfterAuth', `/?bookId=${book.id}`);
       navigate('/auth');
       return;
     }
-    navigate(`/?bookId=${book.id}`);
+    
+    // If we're already authenticated and approved, navigate directly
+    if (location.pathname !== '/') {
+      navigate('/', { replace: true }); // First ensure we're on the home route
+      setTimeout(() => {
+        navigate(`/?bookId=${book.id}`);
+      }, 100);
+    } else {
+      navigate(`/?bookId=${book.id}`);
+    }
   };
 
   useEffect(() => {
