@@ -317,7 +317,7 @@ export function BookDetailView({ book, onLend, onReturn, onClose }: BookDetailVi
                 <Label htmlFor="bookType">Book Type</Label>
                 <Select
                   value={editedBook.bookType}
-                  onValueChange={(value: 'fiction' | 'non-fiction') => 
+                  onValueChange={(value: 'fiction' | 'non-fiction' | 'cookbook') => 
                     setEditedBook(prev => ({ ...prev, bookType: value }))
                   }
                 >
@@ -327,6 +327,7 @@ export function BookDetailView({ book, onLend, onReturn, onClose }: BookDetailVi
                   <SelectContent>
                     <SelectItem value="fiction">Fiction</SelectItem>
                     <SelectItem value="non-fiction">Non-Fiction</SelectItem>
+                    <SelectItem value="cookbook">Cookbook</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

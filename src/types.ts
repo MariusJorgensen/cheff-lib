@@ -1,3 +1,4 @@
+
 export interface Book {
   id: number;
   title: string;
@@ -21,7 +22,7 @@ export interface Book {
   }>;
   bookDescription?: string | null;
   authorDescription?: string | null;
-  bookType: 'fiction' | 'non-fiction';
+  bookType: 'fiction' | 'non-fiction' | 'cookbook';
 }
 
 export interface Comment {

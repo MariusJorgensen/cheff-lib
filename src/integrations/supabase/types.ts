@@ -313,7 +313,7 @@ export type Database = {
     }
     Enums: {
       book_location: "Stockholm 🇸🇪" | "Oslo 🇧🇻"
-      book_type: "fiction" | "non-fiction"
+      book_type: "fiction" | "non-fiction" | "cookbook"
     }
     CompositeTypes: {
       [_ in never]: never

@@ -30,7 +30,7 @@ interface AddBookDialogProps {
     location: 'Stockholm 🇸🇪' | 'Oslo 🇧🇻',
     bookDescription?: string,
     authorDescription?: string,
-    bookType?: 'fiction' | 'non-fiction'
+    bookType?: 'fiction' | 'non-fiction' | 'cookbook'
   ) => void;
 }
 
@@ -43,7 +43,7 @@ export function AddBookDialog({ onAddBook }: AddBookDialogProps) {
   const [location, setLocation] = useState<'Stockholm 🇸🇪' | 'Oslo 🇧🇻'>('Oslo 🇧🇻');
   const [bookDescription, setBookDescription] = useState("");
   const [authorDescription, setAuthorDescription] = useState("");
-  const [bookType, setBookType] = useState<'fiction' | 'non-fiction'>('non-fiction');
+  const [bookType, setBookType] = useState<'fiction' | 'non-fiction' | 'cookbook'>('non-fiction');
   const [isLoading, setIsLoading] = useState(false);
   const [isGeneratingDescriptions, setIsGeneratingDescriptions] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
@@ -297,12 +297,12 @@ export function AddBookDialog({ onAddBook }: AddBookDialogProps) {
               disabled={isLoading}
             />
           </div>
+          
           <div className="space-y-2">
             <Label htmlFor="bookType">Book Type</Label>
-            <Select 
-              value={bookType} 
-              onValueChange={(value) => setBookType(value as 'fiction' | 'non-fiction')}
-              disabled={isLoading}
+            <Select
+              value={bookType}
+              onValueChange={(value: 'fiction' | 'non-fiction' | 'cookbook') => setBookType(value)}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select book type" />
@@ -310,9 +310,11 @@ export function AddBookDialog({ onAddBook }: AddBookDialogProps) {
               <SelectContent>
                 <SelectItem value="fiction">Fiction</SelectItem>
                 <SelectItem value="non-fiction">Non-Fiction</SelectItem>
+                <SelectItem value="cookbook">Cookbook</SelectItem>
               </SelectContent>
             </Select>
           </div>
+          
           <div className="space-y-2">
             <Label htmlFor="bookDescription" className="flex items-center gap-2">
               About the Book
