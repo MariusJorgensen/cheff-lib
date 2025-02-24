@@ -29,7 +29,7 @@ export function BookCard({ book, onLend, onReturn }: BookCardProps) {
         className="cursor-pointer"
         onClick={handleCardClick}
       >
-        <Card className="glass-card transition-transform hover:scale-105 h-[440px] flex flex-col">
+        <Card className="transition-transform hover:scale-105 h-[440px] flex flex-col bg-card/50">
           <div className="relative">
             <div className="absolute top-2 right-2 z-10">
               <Badge variant={book.lentTo ? "destructive" : "secondary"}>
