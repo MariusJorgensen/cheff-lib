@@ -1,3 +1,4 @@
+
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -5,13 +6,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { AuthContext } from "@/contexts/AuthContext";
 import { useAuthState } from "@/hooks/useAuthState";
 import { checkApprovalStatus } from "@/services/approvalService";
-import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
-
-type Profile = {
-  id: string;
-  is_approved: boolean;
-  [key: string]: any;
-};
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
@@ -36,65 +30,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     console.log("Starting auth initialization...");
     let mounted = true;
 
-    const handleSession = async (currentSession: any) => {
-      console.log("Handling session:", currentSession);
-      
-      if (!mounted) {
-        console.log("Component unmounted, skipping session handling");
-        return;
-      }
-
-      try {
-        if (currentSession?.user) {
-          console.log("Setting session and user");
-          setSession(currentSession);
-          setUser(currentSession.user);
-          
-          console.log("Checking approval status");
-          const { approved, isAdmin: isAdminUser } = await checkApprovalStatus(currentSession.user.id);
-          
-          if (!mounted) {
-            console.log("Component unmounted during approval check");
-            return;
-          }
-          
-          console.log("Setting approval status:", { approved, isAdmin: isAdminUser });
-          setIsApproved(approved);
-          setIsAdmin(isAdminUser);
-
-          if (window.location.pathname === '/auth') {
-            console.log("Redirecting to home from auth page");
-            navigate('/', { replace: true });
-          }
-        } else {
-          console.log("No session found, clearing state");
-          setSession(null);
-          setUser(null);
-          setIsApproved(false);
-          setIsAdmin(false);
-
-          if (window.location.pathname !== '/auth') {
-            console.log("Redirecting to auth page");
-            navigate('/auth', { replace: true });
-          }
-        }
-      } catch (error) {
-        console.error("Error in handleSession:", error);
-        if (!mounted) return;
-        
-        toast({
-          title: "Error",
-          description: "Failed to initialize session",
-          variant: "destructive",
-        });
-      }
-
-      if (mounted && !initializationComplete) {
-        console.log("Marking initialization as complete");
-        setInitializationComplete(true);
-      }
-    };
-
     const initialize = async () => {
       console.log("Initializing auth state");
       
@@ -104,31 +39,63 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       try {
+        setIsLoading(true);
         const { data: { session: initialSession }, error } = await supabase.auth.getSession();
         
-        if (error) {
-          throw error;
-        }
+        if (error) throw error;
 
-        console.log("Initial session received:", initialSession);
-        await handleSession(initialSession);
+        if (initialSession?.user) {
+          setSession(initialSession);
+          setUser(initialSession.user);
+          
+          const { approved, isAdmin: isAdminUser } = await checkApprovalStatus(initialSession.user.id);
+          if (mounted) {
+            setIsApproved(approved);
+            setIsAdmin(isAdminUser);
+          }
+        }
       } catch (error) {
         console.error("Error during initialization:", error);
-        if (!mounted) return;
-        
-        toast({
-          title: "Error",
-          description: "Failed to initialize session",
-          variant: "destructive",
-        });
-        setInitializationComplete(true);
+        if (mounted) {
+          toast({
+            title: "Error",
+            description: "Failed to initialize session",
+            variant: "destructive",
+          });
+        }
+      } finally {
+        if (mounted) {
+          setIsLoading(false);
+          setInitializationComplete(true);
+        }
       }
     };
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, newSession) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
       console.log("Auth state changed:", event, newSession);
-      if (mounted) {
-        handleSession(newSession);
+      if (!mounted) return;
+
+      try {
+        if (newSession?.user) {
+          setSession(newSession);
+          setUser(newSession.user);
+          
+          const { approved, isAdmin: isAdminUser } = await checkApprovalStatus(newSession.user.id);
+          setIsApproved(approved);
+          setIsAdmin(isAdminUser);
+        } else {
+          setSession(null);
+          setUser(null);
+          setIsApproved(false);
+          setIsAdmin(false);
+        }
+      } catch (error) {
+        console.error("Error in auth state change:", error);
+        toast({
+          title: "Error",
+          description: "Failed to update session",
+          variant: "destructive",
+        });
       }
     });
 
@@ -140,56 +107,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       subscription.unsubscribe();
     };
   }, []);
-
-  useEffect(() => {
-    if (!isAdmin) return;
-
-    console.log("Setting up pending users subscription for admin");
-    
-    const subscription = supabase
-      .channel('pending-users')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'profiles',
-          filter: 'is_approved=eq.false'
-        },
-        (payload) => {
-          console.log('New pending user:', payload);
-          toast({
-            title: "New User Pending Approval",
-            description: `${payload.new.email} has requested to join the library.`,
-            duration: 5000,
-          });
-        }
-      )
-      .subscribe();
-
-    return () => {
-      console.log("Cleaning up pending users subscription");
-      supabase.removeChannel(subscription);
-    };
-  }, [isAdmin, toast]);
-
-  const signOut = async () => {
-    try {
-      await supabase.auth.signOut();
-      setSession(null);
-      setUser(null);
-      setIsApproved(false);
-      setIsAdmin(false);
-      navigate("/auth", { replace: true });
-    } catch (error) {
-      console.error("Error signing out:", error);
-      toast({
-        title: "Error",
-        description: "Failed to sign out",
-        variant: "destructive",
-      });
-    }
-  };
 
   console.log("Auth provider state:", { initializationComplete, session, user });
 
@@ -203,7 +120,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ session, user, isApproved, isAdmin, signOut }}>
+    <AuthContext.Provider value={{ session, user, isApproved, isAdmin, signOut: async () => {
+      try {
+        await supabase.auth.signOut();
+        setSession(null);
+        setUser(null);
+        setIsApproved(false);
+        setIsAdmin(false);
+        navigate("/auth", { replace: true });
+      } catch (error) {
+        console.error("Error signing out:", error);
+        toast({
+          title: "Error",
+          description: "Failed to sign out",
+          variant: "destructive",
+        });
+      }
+    } }}>
       {children}
     </AuthContext.Provider>
   );
