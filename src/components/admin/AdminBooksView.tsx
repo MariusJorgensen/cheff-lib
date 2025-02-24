@@ -9,15 +9,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/components/ui/use-toast";
 import { Book } from "@/types";
-
-interface BookWithLoanInfo extends Book {
-  currentBorrower?: string;
-  loanDate?: string;
-}
+import { Trash2 } from "lucide-react";
 
 export function AdminBooksView() {
-  const [books, setBooks] = useState<BookWithLoanInfo[]>([]);
+  const [books, setBooks] = useState<Book[]>([]);
+  const { toast } = useToast();
 
   const fetchBooks = async () => {
     const { data, error } = await supabase
@@ -37,16 +36,45 @@ export function AdminBooksView() {
       return;
     }
 
-    const processedBooks = data.map(book => {
-      const activeLoan = book.loans?.find((loan: any) => !loan.returned_at);
-      return {
-        ...book,
-        currentBorrower: activeLoan?.lent_to || null,
-        loanDate: activeLoan?.created_at || null,
-      };
-    });
+    const processedBooks = data.map(book => ({
+      id: book.id,
+      title: book.title,
+      author: book.author,
+      imageUrl: book.image_url || '',
+      bookType: book.book_type || 'non-fiction',
+      location: book.location || 'Oslo 🇧🇻',
+      lentTo: book.loans?.find((loan: any) => !loan.returned_at)?.lent_to || null,
+      averageRating: book.average_rating || null,
+      aiSummary: book.ai_summary || null,
+      bookDescription: book.book_description || null,
+      authorDescription: book.author_description || null,
+      loans: book.loans || [],
+    })) as Book[];
 
     setBooks(processedBooks);
+  };
+
+  const handleDeleteBook = async (bookId: number) => {
+    const { error } = await supabase
+      .from('books')
+      .delete()
+      .eq('id', bookId);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete book. Please try again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    toast({
+      title: "Success",
+      description: "Book has been removed from the library.",
+    });
+
+    fetchBooks();
   };
 
   useEffect(() => {
@@ -63,7 +91,7 @@ export function AdminBooksView() {
             <TableHead>Type</TableHead>
             <TableHead>Location</TableHead>
             <TableHead>Status</TableHead>
-            <TableHead>Current Borrower</TableHead>
+            <TableHead>Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -74,19 +102,24 @@ export function AdminBooksView() {
               <TableCell className="capitalize">{book.bookType}</TableCell>
               <TableCell>{book.location}</TableCell>
               <TableCell>
-                {book.currentBorrower ? 'On Loan' : 'Available'}
-              </TableCell>
-              <TableCell>
-                {book.currentBorrower ? (
+                {book.lentTo ? (
                   <div className="text-sm">
-                    <div>{book.currentBorrower}</div>
-                    <div className="text-muted-foreground">
-                      Since: {new Date(book.loanDate!).toLocaleDateString()}
-                    </div>
+                    <span className="text-destructive">On Loan</span>
+                    <div className="text-muted-foreground">To: {book.lentTo}</div>
                   </div>
                 ) : (
-                  '-'
+                  'Available'
                 )}
+              </TableCell>
+              <TableCell>
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  onClick={() => handleDeleteBook(book.id)}
+                  className="text-destructive hover:text-destructive"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
               </TableCell>
             </TableRow>
           ))}
