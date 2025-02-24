@@ -7,17 +7,20 @@ import { Trash2 } from "lucide-react";
 import { useAuth } from "@/components/AuthProvider";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface BookCommentsProps {
   comments: Comment[];
   isLoading: boolean;
   onAddComment: (comment: string) => void;
+  bookId: number;
 }
 
-export function BookComments({ comments, isLoading, onAddComment }: BookCommentsProps) {
+export function BookComments({ comments, isLoading, onAddComment, bookId }: BookCommentsProps) {
   const [newComment, setNewComment] = useState("");
   const { user } = useAuth();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const handleSubmit = () => {
     if (!newComment.trim()) return;
@@ -35,13 +38,13 @@ export function BookComments({ comments, isLoading, onAddComment }: BookComments
 
       if (error) throw error;
 
+      // Invalidate and refetch the book's comments
+      queryClient.invalidateQueries({ queryKey: ['bookComments', bookId] });
+
       toast({
         title: "Success",
         description: "Comment deleted successfully!",
       });
-
-      // Refresh comments by triggering a re-fetch
-      window.location.reload();
     } catch (error) {
       console.error('Error deleting comment:', error);
       toast({
