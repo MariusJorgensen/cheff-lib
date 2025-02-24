@@ -31,9 +31,10 @@ export function BookDetailView({ book, onLend, onReturn, onClose }: BookDetailVi
           <span>{book.location}</span>
         </div>
         <Button
-          variant="default"
+          variant="ghost"
+          size="sm"
           onClick={() => setShowEditDialog(true)}
-          className="gap-2"
+          className="text-muted-foreground hover:text-foreground gap-2"
         >
           <Edit className="h-4 w-4" />
           Edit Book

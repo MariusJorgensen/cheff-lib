@@ -65,7 +65,6 @@ export function BookLendingControls({ book, onLend, onReturn, onClose }: BookLen
     }
   };
 
-  // Check if current user is the borrower using user ID
   const isCurrentBorrower = user && book.loans?.some(loan => 
     !loan.returned_at && loan.user_id === user.id
   );
@@ -74,7 +73,7 @@ export function BookLendingControls({ book, onLend, onReturn, onClose }: BookLen
   return book.lentTo ? (
     <>
       {canReturnBook && (
-        <Button variant="outline" onClick={() => setShowReturnDialog(true)} className="w-full">
+        <Button variant="secondary" onClick={() => setShowReturnDialog(true)} className="w-full">
           Return Book
         </Button>
       )}
@@ -97,7 +96,7 @@ export function BookLendingControls({ book, onLend, onReturn, onClose }: BookLen
     </>
   ) : (
     <>
-      <Button variant="outline" onClick={() => setShowLendDialog(true)} className="w-full">
+      <Button variant="default" onClick={() => setShowLendDialog(true)} className="w-full">
         Borrow Book
       </Button>
       <AlertDialog open={showLendDialog} onOpenChange={setShowLendDialog}>
