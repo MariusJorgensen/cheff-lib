@@ -33,7 +33,7 @@ export const fetchBooks = async (userId: string | undefined = undefined) => {
         returned_at,
         created_at,
         lent_to,
-        profiles!loans_user_id_fkey (
+        profiles (
           full_name,
           email
         )
@@ -66,7 +66,10 @@ export const fetchBooks = async (userId: string | undefined = undefined) => {
   // Process the books data
   const processedBooks = booksData.map(book => {
     const activeLoan = book.loans?.find((loan: any) => !loan.returned_at);
-    const loanUserName = activeLoan?.profiles?.full_name || activeLoan?.profiles?.email || activeLoan?.lent_to || null;
+    const loanUserProfile = activeLoan?.profiles;
+    const loanUserName = loanUserProfile 
+      ? (loanUserProfile.full_name || loanUserProfile.email) 
+      : activeLoan?.lent_to || null;
     
     return {
       id: book.id,
@@ -86,7 +89,7 @@ export const fetchBooks = async (userId: string | undefined = undefined) => {
       loans: book.loans?.map(loan => ({
         user_id: loan.user_id,
         returned_at: loan.returned_at,
-        lent_to: loan.profiles?.full_name || loan.profiles?.email || loan.lent_to,
+        lent_to: loan.profiles ? (loan.profiles.full_name || loan.profiles.email) : loan.lent_to,
         created_at: loan.created_at
       })),
       bookDescription: book.book_description,
