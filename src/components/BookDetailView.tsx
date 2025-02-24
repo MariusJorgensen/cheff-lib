@@ -23,12 +23,33 @@ export function BookDetailView({ book, onLend, onReturn, onClose }: BookDetailVi
   const { comments, isLoadingComments, visibleComments, handleAddComment, showMoreComments } = useBookComments(book.id);
   const { handleReaction } = useBookReactions(book.id);
 
+  // Safety check - if book is undefined, show a loading state
+  if (!book) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-white"></div>
+      </div>
+    );
+  }
+
+  // Ensure we have all required book properties
+  const safeBook: Book = {
+    ...book,
+    lentTo: book.lentTo || null,
+    reactions: book.reactions || {},
+    userReactions: book.userReactions || [],
+    loans: book.loans || [],
+    bookDescription: book.bookDescription || null,
+    authorDescription: book.authorDescription || null,
+    bookType: book.bookType || 'non-fiction',
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between border-b pb-4">
         <div className="flex items-center gap-2 text-muted-foreground">
           <MapPin className="h-4 w-4" />
-          <span>{book.location}</span>
+          <span>{safeBook.location}</span>
         </div>
         <Button
           variant="ghost"
@@ -42,17 +63,17 @@ export function BookDetailView({ book, onLend, onReturn, onClose }: BookDetailVi
       </div>
 
       <BookLendingControls
-        book={book}
+        book={safeBook}
         onLend={onLend}
         onReturn={onReturn}
         onClose={onClose}
       />
 
-      <BookImageSection book={book} />
+      <BookImageSection book={safeBook} />
       
       <BookReactions 
-        userReactions={book.userReactions} 
-        reactions={book.reactions}
+        userReactions={safeBook.userReactions} 
+        reactions={safeBook.reactions}
         onReaction={handleReaction} 
       />
       
@@ -61,7 +82,7 @@ export function BookDetailView({ book, onLend, onReturn, onClose }: BookDetailVi
           comments={comments.slice(0, visibleComments)}
           isLoading={isLoadingComments}
           onAddComment={handleAddComment}
-          bookId={book.id}
+          bookId={safeBook.id}
         />
         {comments.length > visibleComments && (
           <Button 
@@ -75,7 +96,7 @@ export function BookDetailView({ book, onLend, onReturn, onClose }: BookDetailVi
       </div>
 
       <BookEditDialog 
-        book={book}
+        book={safeBook}
         open={showEditDialog}
         onOpenChange={setShowEditDialog}
       />
