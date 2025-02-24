@@ -102,7 +102,7 @@ export function AdminBooksView() {
       navigate('/auth');
       return;
     }
-    navigate(`/books/${book.id}`);
+    navigate(`/?bookId=${book.id}`);
   };
 
   useEffect(() => {
