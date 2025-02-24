@@ -82,49 +82,56 @@ export function AdminBooksView() {
   }, []);
 
   return (
-    <div className="rounded-md border">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Title</TableHead>
-            <TableHead>Author</TableHead>
-            <TableHead>Type</TableHead>
-            <TableHead>Location</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {books.map((book) => (
-            <TableRow key={book.id}>
-              <TableCell className="font-medium">{book.title}</TableCell>
-              <TableCell>{book.author}</TableCell>
-              <TableCell className="capitalize">{book.bookType}</TableCell>
-              <TableCell>{book.location}</TableCell>
-              <TableCell>
-                {book.lentTo ? (
-                  <div className="text-sm">
-                    <span className="text-destructive">On Loan</span>
-                    <div className="text-muted-foreground">To: {book.lentTo}</div>
-                  </div>
-                ) : (
-                  'Available'
-                )}
-              </TableCell>
-              <TableCell>
-                <Button 
-                  variant="ghost" 
-                  size="icon"
-                  onClick={() => handleDeleteBook(book.id)}
-                  className="text-destructive hover:text-destructive"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </TableCell>
+    <div className="rounded-md border overflow-hidden">
+      <div className="overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[140px] min-w-[140px] lg:w-auto">Title</TableHead>
+              <TableHead className="hidden sm:table-cell">Author</TableHead>
+              <TableHead className="hidden sm:table-cell">Type</TableHead>
+              <TableHead className="hidden sm:table-cell">Location</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="w-[60px]">Actions</TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {books.map((book) => (
+              <TableRow key={book.id}>
+                <TableCell className="font-medium">
+                  <span className="block truncate">{book.title}</span>
+                  <span className="block sm:hidden text-xs text-muted-foreground">
+                    {book.author} • {book.bookType}
+                  </span>
+                </TableCell>
+                <TableCell className="hidden sm:table-cell">{book.author}</TableCell>
+                <TableCell className="hidden sm:table-cell capitalize">{book.bookType}</TableCell>
+                <TableCell className="hidden sm:table-cell">{book.location}</TableCell>
+                <TableCell>
+                  {book.lentTo ? (
+                    <div className="text-sm">
+                      <span className="text-destructive">On Loan</span>
+                      <div className="text-muted-foreground text-xs">To: {book.lentTo}</div>
+                    </div>
+                  ) : (
+                    'Available'
+                  )}
+                </TableCell>
+                <TableCell>
+                  <Button 
+                    variant="ghost" 
+                    size="icon"
+                    onClick={() => handleDeleteBook(book.id)}
+                    className="text-destructive hover:text-destructive"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 }
