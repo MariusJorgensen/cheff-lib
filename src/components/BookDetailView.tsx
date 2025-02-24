@@ -1,4 +1,3 @@
-
 import { Book, Comment } from "@/types";
 import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
@@ -193,7 +192,6 @@ export function BookDetailView({ book, onLend, onReturn, onClose }: BookDetailVi
         description: "Book updated successfully!",
       });
       setShowEditDialog(false);
-      // This will trigger a re-fetch of the books list
       window.location.reload();
     } catch (error) {
       console.error('Error updating book:', error);
@@ -215,14 +213,13 @@ export function BookDetailView({ book, onLend, onReturn, onClose }: BookDetailVi
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between border-b pb-4">
         <div className="flex items-center gap-2 text-muted-foreground">
           <MapPin className="h-4 w-4" />
           <span>{book.location}</span>
         </div>
         <Button
-          variant="outline"
-          size="sm"
+          variant="default"
           onClick={() => setShowEditDialog(true)}
           className="gap-2"
         >
