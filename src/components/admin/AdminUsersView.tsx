@@ -144,36 +144,28 @@ export function AdminUsersView() {
   }, []);
 
   return (
-    <div className="rounded-md border overflow-hidden">
-      <div className="overflow-x-auto">
+    <div>
+      {/* Desktop view */}
+      <div className="hidden sm:block rounded-md border overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[80px] min-w-[80px] lg:w-auto">Name</TableHead>
-              <TableHead className="min-w-[140px]">Email</TableHead>
-              <TableHead className="hidden sm:table-cell">Status</TableHead>
-              <TableHead className="hidden sm:table-cell">Role</TableHead>
-              <TableHead className="w-[100px]">Actions</TableHead>
+              <TableHead>Name</TableHead>
+              <TableHead>Email</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Role</TableHead>
+              <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {users.map((user) => (
               <TableRow key={user.id}>
                 <TableCell className="font-medium">{user.full_name || 'N/A'}</TableCell>
-                <TableCell className="truncate max-w-[140px]">
-                  <span className="block truncate">{user.email}</span>
-                  <span className="block sm:hidden text-xs text-muted-foreground">
-                    {user.is_approved ? 'Approved' : 'Pending'} • {user.is_admin ? 'Admin' : 'User'}
-                  </span>
-                </TableCell>
-                <TableCell className="hidden sm:table-cell">
-                  {user.is_approved ? 'Approved' : 'Pending'}
-                </TableCell>
-                <TableCell className="hidden sm:table-cell">
-                  {user.is_admin ? 'Admin' : 'User'}
-                </TableCell>
+                <TableCell>{user.email}</TableCell>
+                <TableCell>{user.is_approved ? 'Approved' : 'Pending'}</TableCell>
+                <TableCell>{user.is_admin ? 'Admin' : 'User'}</TableCell>
                 <TableCell>
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-2">
                     {!user.is_approved ? (
                       <Button 
                         variant="ghost"
@@ -207,6 +199,57 @@ export function AdminUsersView() {
             ))}
           </TableBody>
         </Table>
+      </div>
+
+      {/* Mobile view */}
+      <div className="sm:hidden space-y-4">
+        {users.map((user) => (
+          <div key={user.id} className="bg-card rounded-lg border p-4 space-y-3">
+            <div className="flex justify-between items-start">
+              <div>
+                <h3 className="font-medium">{user.full_name || 'N/A'}</h3>
+                <p className="text-sm text-muted-foreground truncate">{user.email}</p>
+              </div>
+              <div className="flex gap-1">
+                {!user.is_approved ? (
+                  <Button 
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleApproveUser(user.id)}
+                    className="text-green-600 hover:text-green-600"
+                  >
+                    <Check className="h-4 w-4" />
+                  </Button>
+                ) : (
+                  <Button 
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleRevokeUser(user.id)}
+                    className="text-destructive hover:text-destructive"
+                  >
+                    <Ban className="h-4 w-4" />
+                  </Button>
+                )}
+                <Button 
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleToggleAdmin(user.id, user.is_admin || false)}
+                  className={user.is_admin ? "text-orange-500 hover:text-orange-500" : "text-muted-foreground"}
+                >
+                  <Shield className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+            <div className="flex gap-2 text-xs">
+              <span className={`px-2 py-1 rounded-full ${user.is_approved ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'}`}>
+                {user.is_approved ? 'Approved' : 'Pending'}
+              </span>
+              <span className={`px-2 py-1 rounded-full ${user.is_admin ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400' : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'}`}>
+                {user.is_admin ? 'Admin' : 'User'}
+              </span>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );

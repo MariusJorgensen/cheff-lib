@@ -12,7 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { Book } from "@/types";
-import { Trash2 } from "lucide-react";
+import { Trash2, Map, Book as BookIcon } from "lucide-react";
 
 export function AdminBooksView() {
   const [books, setBooks] = useState<Book[]>([]);
@@ -82,36 +82,32 @@ export function AdminBooksView() {
   }, []);
 
   return (
-    <div className="rounded-md border overflow-hidden">
-      <div className="overflow-x-auto">
+    <div>
+      {/* Desktop view */}
+      <div className="hidden sm:block rounded-md border overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[140px] min-w-[140px] lg:w-auto">Title</TableHead>
-              <TableHead className="hidden sm:table-cell">Author</TableHead>
-              <TableHead className="hidden sm:table-cell">Type</TableHead>
-              <TableHead className="hidden sm:table-cell">Location</TableHead>
+              <TableHead>Title</TableHead>
+              <TableHead>Author</TableHead>
+              <TableHead>Type</TableHead>
+              <TableHead>Location</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead className="w-[60px]">Actions</TableHead>
+              <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {books.map((book) => (
               <TableRow key={book.id}>
-                <TableCell className="font-medium">
-                  <span className="block truncate">{book.title}</span>
-                  <span className="block sm:hidden text-xs text-muted-foreground">
-                    {book.author} • {book.bookType}
-                  </span>
-                </TableCell>
-                <TableCell className="hidden sm:table-cell">{book.author}</TableCell>
-                <TableCell className="hidden sm:table-cell capitalize">{book.bookType}</TableCell>
-                <TableCell className="hidden sm:table-cell">{book.location}</TableCell>
+                <TableCell className="font-medium">{book.title}</TableCell>
+                <TableCell>{book.author}</TableCell>
+                <TableCell className="capitalize">{book.bookType}</TableCell>
+                <TableCell>{book.location}</TableCell>
                 <TableCell>
                   {book.lentTo ? (
                     <div className="text-sm">
                       <span className="text-destructive">On Loan</span>
-                      <div className="text-muted-foreground text-xs">To: {book.lentTo}</div>
+                      <div className="text-muted-foreground">To: {book.lentTo}</div>
                     </div>
                   ) : (
                     'Available'
@@ -131,6 +127,41 @@ export function AdminBooksView() {
             ))}
           </TableBody>
         </Table>
+      </div>
+
+      {/* Mobile view */}
+      <div className="sm:hidden space-y-4">
+        {books.map((book) => (
+          <div key={book.id} className="bg-card rounded-lg border p-4 space-y-3">
+            <div className="flex justify-between items-start gap-4">
+              <div className="min-w-0 flex-1">
+                <h3 className="font-medium truncate">{book.title}</h3>
+                <p className="text-sm text-muted-foreground truncate">{book.author}</p>
+              </div>
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={() => handleDeleteBook(book.id)}
+                className="text-destructive hover:text-destructive shrink-0"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="flex flex-wrap gap-2 text-xs">
+              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+                <BookIcon className="h-3 w-3" />
+                {book.bookType}
+              </span>
+              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-slate-100 text-slate-700 dark:bg-slate-900/30 dark:text-slate-400">
+                <Map className="h-3 w-3" />
+                {book.location}
+              </span>
+              <span className={`px-2 py-1 rounded-full ${book.lentTo ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'}`}>
+                {book.lentTo ? `Loaned to ${book.lentTo}` : 'Available'}
+              </span>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
