@@ -23,7 +23,7 @@ export const fetchBooks = async (userId: string | undefined = undefined) => {
     .from('books')
     .select(`
       *,
-      profiles!books_added_by_user_id_fkey (
+      profiles (
         full_name,
         email
       ),
