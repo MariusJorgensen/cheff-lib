@@ -24,9 +24,15 @@ export function AdminBooksView() {
       .select(`
         *,
         loans (
+          id,
           lent_to,
           created_at,
-          returned_at
+          returned_at,
+          user_id,
+          profiles (
+            full_name,
+            email
+          )
         )
       `)
       .order('created_at', { ascending: false });
@@ -36,20 +42,28 @@ export function AdminBooksView() {
       return;
     }
 
-    const processedBooks = data.map(book => ({
-      id: book.id,
-      title: book.title,
-      author: book.author,
-      imageUrl: book.image_url || '',
-      bookType: book.book_type || 'non-fiction',
-      location: book.location || 'Oslo 🇧🇻',
-      lentTo: book.loans?.find((loan: any) => !loan.returned_at)?.lent_to || null,
-      averageRating: book.average_rating || null,
-      aiSummary: book.ai_summary || null,
-      bookDescription: book.book_description || null,
-      authorDescription: book.author_description || null,
-      loans: book.loans || [],
-    })) as Book[];
+    const processedBooks = data.map(book => {
+      const activeLoan = book.loans?.find((loan: any) => !loan.returned_at);
+      const loanUserProfile = activeLoan?.profiles;
+      const loanUserName = loanUserProfile 
+        ? (loanUserProfile.full_name || loanUserProfile.email) 
+        : activeLoan?.lent_to || null;
+
+      return {
+        id: book.id,
+        title: book.title,
+        author: book.author,
+        imageUrl: book.image_url || '',
+        bookType: book.book_type || 'non-fiction',
+        location: book.location || 'Oslo 🇧🇻',
+        lentTo: loanUserName,
+        averageRating: book.average_rating || null,
+        aiSummary: book.ai_summary || null,
+        bookDescription: book.book_description || null,
+        authorDescription: book.author_description || null,
+        loans: book.loans || [],
+      } as Book;
+    });
 
     setBooks(processedBooks);
   };
