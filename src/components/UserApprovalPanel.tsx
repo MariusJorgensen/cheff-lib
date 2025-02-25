@@ -7,6 +7,13 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { User, UserCog, Check, X, Shield, ShieldOff, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface User {
   id: string;
@@ -23,6 +30,7 @@ export function UserApprovalPanel() {
   const { signOut, user } = useAuth();
   const [updating, setUpdating] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState<"all" | "verified" | "pending">("all");
 
   const fetchUsers = async () => {
     try {
@@ -173,11 +181,22 @@ export function UserApprovalPanel() {
 
   const filteredUsers = users.filter((u) => {
     const searchTerm = search.toLowerCase();
-    return (
+    const matchesSearch = 
       u.email.toLowerCase().includes(searchTerm) ||
-      (u.full_name && u.full_name.toLowerCase().includes(searchTerm))
-    );
+      (u.full_name && u.full_name.toLowerCase().includes(searchTerm));
+
+    switch (filter) {
+      case "verified":
+        return matchesSearch && u.is_approved;
+      case "pending":
+        return matchesSearch && !u.is_approved;
+      default:
+        return matchesSearch;
+    }
   });
+
+  const pendingCount = users.filter(u => !u.is_approved).length;
+  const verifiedCount = users.filter(u => u.is_approved).length;
 
   if (users.length === 0) {
     return (
@@ -190,14 +209,32 @@ export function UserApprovalPanel() {
 
   return (
     <div className="space-y-6">
-      <div className="relative">
-        <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Search users by name or email..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="pl-9"
-        />
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search users by name or email..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+        <Select value={filter} onValueChange={(value: "all" | "verified" | "pending") => setFilter(value)}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Filter users" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">
+              All Users ({users.length})
+            </SelectItem>
+            <SelectItem value="verified">
+              Verified Users ({verifiedCount})
+            </SelectItem>
+            <SelectItem value="pending">
+              Pending Verification ({pendingCount})
+            </SelectItem>
+          </SelectContent>
+        </Select>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredUsers.map((user) => (
@@ -212,7 +249,7 @@ export function UserApprovalPanel() {
                 ) : user.is_approved ? (
                   <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
                     <Check className="w-3 h-3 mr-1" />
-                    Approved
+                    Verified
                   </Badge>
                 ) : (
                   <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
@@ -254,7 +291,7 @@ export function UserApprovalPanel() {
                       className="w-full"
                     >
                       <Check className="w-4 h-4 mr-1" />
-                      Approve
+                      Verify User
                     </Button>
                   )}
                   <Button
