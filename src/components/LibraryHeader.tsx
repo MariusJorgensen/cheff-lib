@@ -1,8 +1,9 @@
 
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { Menu, User } from "lucide-react";
+import { Menu, Users, Book } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FeedbackDialog } from "@/components/FeedbackDialog";
+import { useAuth } from "@/components/AuthProvider";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,6 +11,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import { useNavigate } from "react-router-dom";
 
 interface LibraryHeaderProps {
   userEmail: string | undefined;
@@ -17,6 +19,9 @@ interface LibraryHeaderProps {
 }
 
 export function LibraryHeader({ userEmail, onSignOut }: LibraryHeaderProps) {
+  const { isAdmin } = useAuth();
+  const navigate = useNavigate();
+
   return (
     <div className="flex justify-between items-center">
       <h1 className="text-4xl font-bold flex items-center gap-1">
@@ -41,13 +46,27 @@ export function LibraryHeader({ userEmail, onSignOut }: LibraryHeaderProps) {
               size="icon"
               className="hover:bg-[#F5F3E1] dark:hover:bg-[#0A1840]/20"
             >
-              <User className="h-5 w-5" />
+              <Users className="h-5 w-5" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem className="text-muted-foreground">
               {userEmail}
             </DropdownMenuItem>
+            {isAdmin && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => navigate("/admin/users")}>
+                  <Users className="mr-2 h-4 w-4" />
+                  User Management
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/admin/books")}>
+                  <Book className="mr-2 h-4 w-4" />
+                  Book Management
+                </DropdownMenuItem>
+              </>
+            )}
+            <DropdownMenuSeparator />
             <DropdownMenuItem onClick={onSignOut}>
               Sign Out
             </DropdownMenuItem>
@@ -78,6 +97,20 @@ export function LibraryHeader({ userEmail, onSignOut }: LibraryHeaderProps) {
             <DropdownMenuItem className="text-muted-foreground">
               {userEmail}
             </DropdownMenuItem>
+            {isAdmin && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => navigate("/admin/users")}>
+                  <Users className="mr-2 h-4 w-4" />
+                  User Management
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/admin/books")}>
+                  <Book className="mr-2 h-4 w-4" />
+                  Book Management
+                </DropdownMenuItem>
+              </>
+            )}
+            <DropdownMenuSeparator />
             <DropdownMenuItem onClick={onSignOut}>
               Sign Out
             </DropdownMenuItem>

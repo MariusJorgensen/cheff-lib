@@ -10,14 +10,20 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import { useAuth } from "./components/AuthProvider";
+import { UserApprovalPanel } from "./components/UserApprovalPanel";
+import { AdminBooksPanel } from "./components/AdminBooksPanel";
 
 const queryClient = new QueryClient();
 
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { session } = useAuth();
+const ProtectedRoute = ({ children, adminOnly = false }: { children: React.ReactNode, adminOnly?: boolean }) => {
+  const { session, isAdmin } = useAuth();
   
   if (!session) {
     return <Navigate to="/auth" />;
+  }
+
+  if (adminOnly && !isAdmin) {
+    return <Navigate to="/" />;
   }
   
   return children;
@@ -38,6 +44,22 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <Index />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/users"
+                element={
+                  <ProtectedRoute adminOnly>
+                    <UserApprovalPanel />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/books"
+                element={
+                  <ProtectedRoute adminOnly>
+                    <AdminBooksPanel />
                   </ProtectedRoute>
                 }
               />
