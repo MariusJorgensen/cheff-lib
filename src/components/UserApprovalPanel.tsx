@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -6,7 +5,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "./AuthProvider";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { User, UserCog, Check, X, Shield, ShieldOff } from "lucide-react";
+import { User, UserCog, Check, X, Shield, ShieldOff, Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
 
 interface User {
   id: string;
@@ -22,6 +22,7 @@ export function UserApprovalPanel() {
   const { toast } = useToast();
   const { signOut, user } = useAuth();
   const [updating, setUpdating] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
 
   const fetchUsers = async () => {
     try {
@@ -170,6 +171,14 @@ export function UserApprovalPanel() {
     }
   };
 
+  const filteredUsers = users.filter((u) => {
+    const searchTerm = search.toLowerCase();
+    return (
+      u.email.toLowerCase().includes(searchTerm) ||
+      (u.full_name && u.full_name.toLowerCase().includes(searchTerm))
+    );
+  });
+
   if (users.length === 0) {
     return (
       <div className="text-center py-8 text-muted-foreground">
@@ -181,11 +190,19 @@ export function UserApprovalPanel() {
 
   return (
     <div className="space-y-6">
+      <div className="relative">
+        <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="Search users by name or email..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="pl-9"
+        />
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {users.map((user) => (
+        {filteredUsers.map((user) => (
           <Card key={user.id} className="relative overflow-hidden group hover:shadow-lg transition-shadow duration-200">
             <CardContent className="p-6">
-              {/* Status Indicator */}
               <div className="absolute top-0 right-0 p-3">
                 {user.is_admin ? (
                   <Badge variant="secondary" className="bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
@@ -205,7 +222,6 @@ export function UserApprovalPanel() {
                 )}
               </div>
 
-              {/* User Info */}
               <div className="space-y-4">
                 <div className="space-y-2">
                   {user.full_name && (
@@ -217,7 +233,6 @@ export function UserApprovalPanel() {
                   </p>
                 </div>
 
-                {/* Actions */}
                 <div className="space-y-2 pt-4">
                   {user.is_approved ? (
                     <Button
