@@ -35,10 +35,10 @@ export function useBooks(user: User | null) {
     title: string, 
     author: string, 
     imageUrl: string, 
-    location: 'Stockholm 🇸🇪' | 'Oslo 🇧🇻',
+    location: 'Stockholm 🇸🇪' | 'Oslo 🇧🇻' | 'Helsingør 🇩🇰',
     bookDescription?: string,
     authorDescription?: string,
-    bookType: 'fiction' | 'non-fiction' = 'non-fiction'
+    bookType: 'fiction' | 'non-fiction' | 'cookbook' = 'non-fiction'
   ) => {
     try {
       await addBookToLibrary(title, author, imageUrl, location, bookDescription, authorDescription, bookType);
