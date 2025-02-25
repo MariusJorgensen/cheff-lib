@@ -23,7 +23,7 @@ export const fetchBooks = async (userId: string | undefined = undefined) => {
     .from('books')
     .select(`
       *,
-      profiles (
+      added_by:profiles!books_added_by_user_id_fkey (
         full_name,
         email
       ),
@@ -32,7 +32,11 @@ export const fetchBooks = async (userId: string | undefined = undefined) => {
         user_id,
         returned_at,
         created_at,
-        lent_to
+        lent_to,
+        borrower:profiles!loans_user_id_fkey (
+          full_name,
+          email
+        )
       ),
       book_ratings (
         rating,
@@ -62,6 +66,8 @@ export const fetchBooks = async (userId: string | undefined = undefined) => {
   // Process the books data
   const processedBooks = booksData.map(book => {
     const activeLoan = book.loans?.find((loan: any) => !loan.returned_at);
+    const addedByUser = book.added_by;
+    const borrowerProfile = activeLoan?.borrower;
     
     return {
       id: book.id,
@@ -71,7 +77,7 @@ export const fetchBooks = async (userId: string | undefined = undefined) => {
       lentTo: activeLoan?.lent_to || null,
       averageRating: book.average_rating,
       aiSummary: book.ai_summary,
-      addedBy: book.profiles?.full_name || book.profiles?.email || null,
+      addedBy: addedByUser?.full_name || addedByUser?.email || 'Unknown',
       createdAt: book.created_at || null,
       userRating: userRatings?.find(r => r.book_id === book.id)?.rating || null,
       reactions: {},
@@ -82,7 +88,8 @@ export const fetchBooks = async (userId: string | undefined = undefined) => {
         user_id: loan.user_id,
         returned_at: loan.returned_at,
         lent_to: loan.lent_to,
-        created_at: loan.created_at
+        created_at: loan.created_at,
+        borrowerName: loan.borrower?.full_name || loan.borrower?.email || loan.lent_to
       })),
       bookDescription: book.book_description,
       authorDescription: book.author_description,
@@ -118,7 +125,13 @@ export const addBookToLibrary = async (
         added_by_user_id: user?.id
       }
     ])
-    .select()
+    .select(`
+      *,
+      added_by:profiles!books_added_by_user_id_fkey (
+        full_name,
+        email
+      )
+    `)
     .single();
 
   if (error) throw error;
@@ -137,7 +150,7 @@ export const addBookToLibrary = async (
     bookDescription: data.book_description,
     authorDescription: data.author_description,
     bookType: data.book_type,
-    addedBy: null
+    addedBy: data.added_by?.full_name || data.added_by?.email || 'Unknown'
   } as Book;
 };
 
