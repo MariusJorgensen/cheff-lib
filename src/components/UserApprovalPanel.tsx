@@ -2,14 +2,15 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { useAuth } from "./AuthProvider";
 
 interface PendingUser {
@@ -17,32 +18,32 @@ interface PendingUser {
   email: string;
   full_name: string | null;
   created_at: string;
+  is_approved: boolean;
 }
 
 export function UserApprovalPanel() {
-  const [pendingUsers, setPendingUsers] = useState<PendingUser[]>([]);
+  const [users, setUsers] = useState<PendingUser[]>([]);
   const { toast } = useToast();
   const { signOut, user } = useAuth();
+  const [updating, setUpdating] = useState<string | null>(null);
 
-  const fetchPendingUsers = async () => {
+  const fetchUsers = async () => {
     const { data, error } = await supabase
       .from('profiles')
-      .select('id, email, full_name, created_at')
-      .eq('is_approved', false)
+      .select('id, email, full_name, created_at, is_approved')
       .order('created_at', { ascending: true });
 
     if (error) {
-      console.error('Error fetching pending users:', error);
+      console.error('Error fetching users:', error);
       return;
     }
 
-    setPendingUsers(data || []);
+    setUsers(data || []);
   };
 
   useEffect(() => {
-    fetchPendingUsers();
+    fetchUsers();
 
-    // Subscribe to changes in the profiles table
     const subscription = supabase
       .channel('profiles-changes')
       .on('postgres_changes', 
@@ -52,7 +53,7 @@ export function UserApprovalPanel() {
           table: 'profiles' 
         }, 
         () => {
-          fetchPendingUsers();
+          fetchUsers();
         }
       )
       .subscribe();
@@ -62,69 +63,90 @@ export function UserApprovalPanel() {
     };
   }, []);
 
-  const handleApproveUser = async (userId: string) => {
-    const { error } = await supabase
-      .from('profiles')
-      .update({ is_approved: true })
-      .eq('id', userId);
+  const handleUpdateApproval = async (userId: string, approve: boolean) => {
+    setUpdating(userId);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ is_approved: approve })
+        .eq('id', userId);
 
-    if (error) {
+      if (error) {
+        throw error;
+      }
+
+      if (userId === user?.id) {
+        toast({
+          title: "Status Updated",
+          description: "Your account status has been updated. Please sign in again.",
+        });
+        await signOut();
+      } else {
+        toast({
+          title: "Success",
+          description: `User has been ${approve ? 'approved' : 'revoked'}.`,
+        });
+      }
+
+      fetchUsers();
+    } catch (error: any) {
       toast({
         title: "Error",
-        description: "Failed to approve user. Please try again.",
+        description: error.message,
         variant: "destructive",
       });
-      return;
+    } finally {
+      setUpdating(null);
     }
-
-    // If the approved user is the current user, sign them out to refresh their session
-    if (userId === user?.id) {
-      toast({
-        title: "Success",
-        description: "Your account has been approved. Please sign in again.",
-      });
-      await signOut();
-    } else {
-      toast({
-        title: "Success",
-        description: "User has been approved.",
-      });
-    }
-
-    // Refresh the pending users list
-    fetchPendingUsers();
   };
 
-  if (pendingUsers.length === 0) {
-    return null;
-  }
-
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Pending Approvals</CardTitle>
-        <CardDescription>Review and approve new user requests</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          {pendingUsers.map((user) => (
-            <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
-              <div>
-                <p className="font-medium">{user.email}</p>
-                {user.full_name && (
-                  <p className="text-sm text-muted-foreground">{user.full_name}</p>
-                )}
-                <p className="text-sm text-muted-foreground">
-                  Joined: {new Date(user.created_at).toLocaleDateString()}
-                </p>
-              </div>
-              <Button onClick={() => handleApproveUser(user.id)}>
-                Approve
-              </Button>
-            </div>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
+    <div className="space-y-4">
+      <div className="rounded-lg border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>User</TableHead>
+              <TableHead className="hidden md:table-cell">Joined</TableHead>
+              <TableHead className="hidden md:table-cell">Status</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {users.map((user) => (
+              <TableRow key={user.id}>
+                <TableCell>
+                  {user.full_name && (
+                    <div className="font-medium">{user.full_name}</div>
+                  )}
+                  <div className="text-sm text-muted-foreground">{user.email}</div>
+                  <div className="text-sm text-muted-foreground md:hidden">
+                    {new Date(user.created_at).toLocaleDateString()}
+                    <br />
+                    Status: {user.is_approved ? 'Approved' : 'Pending'}
+                  </div>
+                </TableCell>
+                <TableCell className="hidden md:table-cell">
+                  {new Date(user.created_at).toLocaleDateString()}
+                </TableCell>
+                <TableCell className="hidden md:table-cell">
+                  {user.is_approved ? 'Approved' : 'Pending'}
+                </TableCell>
+                <TableCell className="text-right">
+                  <Button
+                    variant={user.is_approved ? "destructive" : "default"}
+                    size="sm"
+                    onClick={() => handleUpdateApproval(user.id, !user.is_approved)}
+                    disabled={updating === user.id}
+                  >
+                    {user.is_approved ? 'Revoke' : 'Approve'}
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+    </div>
   );
 }
