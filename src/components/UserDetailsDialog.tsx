@@ -37,6 +37,34 @@ interface UserActivity {
   }[];
 }
 
+interface SupabaseBook {
+  id: number;
+  title: string;
+  author: string;
+  created_at: string;
+  image_url: string;
+  location: 'Stockholm 🇸🇪' | 'Oslo 🇧🇻';
+  book_type: 'fiction' | 'non-fiction' | 'cookbook';
+}
+
+const mapSupabaseBookToBook = (book: SupabaseBook): Book => ({
+  id: book.id,
+  title: book.title,
+  author: book.author,
+  imageUrl: book.image_url,
+  location: book.location,
+  bookType: book.book_type,
+  createdAt: book.created_at,
+  lentTo: null,
+  averageRating: null,
+  aiSummary: null,
+  reactions: {},
+  userReactions: [],
+  loans: [],
+  bookDescription: null,
+  authorDescription: null
+});
+
 export function UserDetailsDialog({ userId, userName, isOpen, onClose }: UserDetailsProps) {
   const [userActivity, setUserActivity] = useState<UserActivity>({
     addedBooks: [],
@@ -56,7 +84,7 @@ export function UserDetailsDialog({ userId, userName, isOpen, onClose }: UserDet
 
     try {
       // Fetch books added by the user
-      const { data: addedBooks } = await supabase
+      const { data: addedBooksData } = await supabase
         .from('books')
         .select(`
           id,
@@ -89,14 +117,14 @@ export function UserDetailsDialog({ userId, userName, isOpen, onClose }: UserDet
         .order('created_at', { ascending: false });
 
       const loanHistory = loans?.map((loan) => ({
-        book: loan.books as Book,
+        book: mapSupabaseBookToBook(loan.books as SupabaseBook),
         lentTo: loan.lent_to || '',
         loanDate: loan.created_at,
         returnedAt: loan.returned_at,
       })) || [];
 
       setUserActivity({
-        addedBooks: addedBooks || [],
+        addedBooks: (addedBooksData || []).map(mapSupabaseBookToBook),
         loanHistory,
       });
     } catch (error) {
