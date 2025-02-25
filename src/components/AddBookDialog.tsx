@@ -27,7 +27,7 @@ interface AddBookDialogProps {
     title: string, 
     author: string, 
     imageUrl: string, 
-    location: 'Stockholm 🇸🇪' | 'Oslo 🇧🇻',
+    location: 'Stockholm 🇸🇪' | 'Oslo 🇧🇻' | 'Helsingør 🇩🇰',
     bookDescription?: string,
     authorDescription?: string,
     bookType?: 'fiction' | 'non-fiction' | 'cookbook'
@@ -40,7 +40,7 @@ export function AddBookDialog({ onAddBook }: AddBookDialogProps) {
   const [title, setTitle] = useState("");
   const [author, setAuthor] = useState("");
   const [imageUrl, setImageUrl] = useState("");
-  const [location, setLocation] = useState<'Stockholm 🇸🇪' | 'Oslo 🇧🇻'>('Oslo 🇧🇻');
+  const [location, setLocation] = useState<'Stockholm 🇸🇪' | 'Oslo 🇧🇻' | 'Helsingør 🇩🇰'>('Oslo 🇧🇻');
   const [bookDescription, setBookDescription] = useState("");
   const [authorDescription, setAuthorDescription] = useState("");
   const [bookType, setBookType] = useState<'fiction' | 'non-fiction' | 'cookbook'>('non-fiction');
@@ -361,7 +361,7 @@ export function AddBookDialog({ onAddBook }: AddBookDialogProps) {
             <Label htmlFor="location">Location</Label>
             <Select 
               value={location} 
-              onValueChange={(value) => setLocation(value as 'Stockholm 🇸🇪' | 'Oslo 🇧🇻')}
+              onValueChange={(value) => setLocation(value as 'Stockholm 🇸🇪' | 'Oslo 🇧🇻' | 'Helsingør 🇩🇰')}
               disabled={isLoading}
             >
               <SelectTrigger>
@@ -370,6 +370,7 @@ export function AddBookDialog({ onAddBook }: AddBookDialogProps) {
               <SelectContent>
                 <SelectItem value="Oslo 🇧🇻">Oslo 🇧🇻</SelectItem>
                 <SelectItem value="Stockholm 🇸🇪">Stockholm 🇸🇪</SelectItem>
+                <SelectItem value="Helsingør 🇩🇰">Helsingør 🇩🇰</SelectItem>
               </SelectContent>
             </Select>
           </div>

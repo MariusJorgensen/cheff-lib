@@ -104,7 +104,7 @@ export function BookEditDialog({ book, open, onOpenChange }: BookEditDialogProps
               <Label htmlFor="location">Location</Label>
               <Select
                 value={editedBook.location}
-                onValueChange={(value: 'Stockholm 🇸🇪' | 'Oslo 🇧🇻') => 
+                onValueChange={(value: 'Stockholm 🇸🇪' | 'Oslo 🇧🇻' | 'Helsingør 🇩🇰') => 
                   setEditedBook(prev => ({ ...prev, location: value }))
                 }
               >
@@ -114,6 +114,7 @@ export function BookEditDialog({ book, open, onOpenChange }: BookEditDialogProps
                 <SelectContent>
                   <SelectItem value="Oslo 🇧🇻">Oslo 🇧🇻</SelectItem>
                   <SelectItem value="Stockholm 🇸🇪">Stockholm 🇸🇪</SelectItem>
+                  <SelectItem value="Helsingør 🇩🇰">Helsingør 🇩🇰</SelectItem>
                 </SelectContent>
               </Select>
             </div>
