@@ -24,7 +24,10 @@ export function LibraryHeader({ userEmail, onSignOut }: LibraryHeaderProps) {
 
   return (
     <div className="flex justify-between items-center">
-      <h1 className="text-4xl font-bold flex items-center gap-1">
+      <button 
+        onClick={() => navigate("/")}
+        className="text-4xl font-bold flex items-center gap-1 hover:opacity-80 transition-opacity"
+      >
         <img 
           src="/lovable-uploads/a3896883-856c-4cab-85c0-fad540b10877.png" 
           alt="C Logo" 
@@ -33,7 +36,7 @@ export function LibraryHeader({ userEmail, onSignOut }: LibraryHeaderProps) {
         <span className="bg-gradient-to-r from-[#E56962] to-[#3941E8] bg-clip-text text-transparent">
           heff.lib
         </span>
-      </h1>
+      </button>
 
       {/* Desktop view */}
       <div className="hidden md:flex items-center gap-4">
@@ -56,13 +59,9 @@ export function LibraryHeader({ userEmail, onSignOut }: LibraryHeaderProps) {
             {isAdmin && (
               <>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => navigate("/admin/users")}>
+                <DropdownMenuItem onClick={() => navigate("/admin")}>
                   <Users className="mr-2 h-4 w-4" />
-                  User Management
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate("/admin/books")}>
-                  <Book className="mr-2 h-4 w-4" />
-                  Book Management
+                  Admin Panel
                 </DropdownMenuItem>
               </>
             )}
@@ -100,13 +99,9 @@ export function LibraryHeader({ userEmail, onSignOut }: LibraryHeaderProps) {
             {isAdmin && (
               <>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => navigate("/admin/users")}>
+                <DropdownMenuItem onClick={() => navigate("/admin")}>
                   <Users className="mr-2 h-4 w-4" />
-                  User Management
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate("/admin/books")}>
-                  <Book className="mr-2 h-4 w-4" />
-                  Book Management
+                  Admin Panel
                 </DropdownMenuItem>
               </>
             )}

@@ -10,8 +10,7 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import { useAuth } from "./components/AuthProvider";
-import { UserApprovalPanel } from "./components/UserApprovalPanel";
-import { AdminBooksPanel } from "./components/AdminBooksPanel";
+import { AdminPanel } from "./components/AdminPanel";
 
 const queryClient = new QueryClient();
 
@@ -48,18 +47,10 @@ const App = () => (
                 }
               />
               <Route
-                path="/admin/users"
+                path="/admin/*"
                 element={
                   <ProtectedRoute adminOnly>
-                    <UserApprovalPanel />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/books"
-                element={
-                  <ProtectedRoute adminOnly>
-                    <AdminBooksPanel />
+                    <AdminPanel />
                   </ProtectedRoute>
                 }
               />
