@@ -19,6 +19,7 @@ export const fetchUserRatingsAndReactions = async (userId: string) => {
 export const fetchBooks = async (userId: string | undefined = undefined) => {
   console.log('Fetching books for user:', userId);
   
+  // First, get the books data with their loans
   const { data: booksData, error: booksError } = await supabase
     .from('books')
     .select(`
@@ -32,11 +33,7 @@ export const fetchBooks = async (userId: string | undefined = undefined) => {
         user_id,
         returned_at,
         created_at,
-        lent_to,
-        profiles!loans_user_id_fkey (
-          full_name,
-          email
-        )
+        lent_to
       ),
       book_ratings (
         rating,
@@ -54,20 +51,29 @@ export const fetchBooks = async (userId: string | undefined = undefined) => {
     throw booksError;
   }
 
-  let userRatings = null;
-  let userReactions = null;
-
-  if (userId) {
-    const userData = await fetchUserRatingsAndReactions(userId);
-    userRatings = userData.ratings;
-    userReactions = userData.reactions;
-  }
-
-  // Process the books data
-  const processedBooks = booksData.map(book => {
+  // For each book with an active loan, fetch the borrower's profile
+  const processedBooksPromises = booksData.map(async book => {
     const activeLoan = book.loans?.find((loan: any) => !loan.returned_at);
-    const activeLoanProfile = activeLoan?.profiles;
     
+    let borrowerProfile = null;
+    if (activeLoan?.user_id) {
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('full_name, email')
+        .eq('id', activeLoan.user_id)
+        .single();
+      borrowerProfile = profileData;
+    }
+
+    let userRatings = null;
+    let userReactions = null;
+
+    if (userId) {
+      const userData = await fetchUserRatingsAndReactions(userId);
+      userRatings = userData.ratings;
+      userReactions = userData.reactions;
+    }
+
     return {
       id: book.id,
       title: book.title,
@@ -83,18 +89,38 @@ export const fetchBooks = async (userId: string | undefined = undefined) => {
       userReactions: userReactions?.filter(r => r.book_id === book.id).map(r => r.reaction) || [],
       location: book.location,
       loanDate: activeLoan?.created_at || null,
-      loans: book.loans?.map(loan => ({
-        user_id: loan.user_id,
-        returned_at: loan.returned_at,
-        lent_to: loan.lent_to,
-        created_at: loan.created_at,
-        borrowerName: loan.profiles?.full_name || loan.profiles?.email || loan.lent_to
-      })),
+      loans: book.loans?.map(async loan => {
+        let profile = null;
+        if (loan.user_id) {
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('full_name, email')
+            .eq('id', loan.user_id)
+            .single();
+          profile = profileData;
+        }
+        
+        return {
+          user_id: loan.user_id,
+          returned_at: loan.returned_at,
+          lent_to: loan.lent_to,
+          created_at: loan.created_at,
+          borrowerName: profile?.full_name || profile?.email || loan.lent_to
+        };
+      }),
       bookDescription: book.book_description,
       authorDescription: book.author_description,
       bookType: book.book_type || 'non-fiction'
     } as Book;
   });
+
+  const processedBooks = await Promise.all(processedBooksPromises.map(async (bookPromise) => {
+    const book = await bookPromise;
+    if (book.loans) {
+      book.loans = await Promise.all(book.loans);
+    }
+    return book;
+  }));
 
   return processedBooks;
 };
