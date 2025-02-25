@@ -14,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { UserDetailsDialog } from "./UserDetailsDialog";
 
 interface User {
   id: string;
@@ -31,6 +32,7 @@ export function UserApprovalPanel() {
   const [updating, setUpdating] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"all" | "verified" | "pending">("all");
+  const [selectedUser, setSelectedUser] = useState<{ id: string; name: string | null } | null>(null);
 
   const fetchUsers = async () => {
     try {
@@ -238,7 +240,11 @@ export function UserApprovalPanel() {
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredUsers.map((user) => (
-          <Card key={user.id} className="relative overflow-hidden group hover:shadow-lg transition-shadow duration-200">
+          <Card 
+            key={user.id} 
+            className="relative overflow-hidden group hover:shadow-lg transition-shadow duration-200 cursor-pointer"
+            onClick={() => setSelectedUser({ id: user.id, name: user.full_name })}
+          >
             <CardContent className="p-6">
               <div className="absolute top-0 right-0 p-3">
                 {user.is_admin ? (
@@ -319,6 +325,13 @@ export function UserApprovalPanel() {
           </Card>
         ))}
       </div>
+      
+      <UserDetailsDialog
+        userId={selectedUser?.id || null}
+        userName={selectedUser?.name || null}
+        isOpen={!!selectedUser}
+        onClose={() => setSelectedUser(null)}
+      />
     </div>
   );
 }
