@@ -19,7 +19,6 @@ export const fetchUserRatingsAndReactions = async (userId: string) => {
 export const fetchBooks = async (userId: string | undefined = undefined) => {
   console.log('Fetching books for user:', userId);
   
-  // First, get the books data with their loans
   const { data: booksData, error: booksError } = await supabase
     .from('books')
     .select(`
@@ -51,28 +50,50 @@ export const fetchBooks = async (userId: string | undefined = undefined) => {
     throw booksError;
   }
 
-  // For each book with an active loan, fetch the borrower's profile
+  // Process user data once for all books
+  let userRatings = null;
+  let userReactions = null;
+  if (userId) {
+    const userData = await fetchUserRatingsAndReactions(userId);
+    userRatings = userData.ratings;
+    userReactions = userData.reactions;
+  }
+
+  // Process each book's data
   const processedBooksPromises = booksData.map(async book => {
-    const activeLoan = book.loans?.find((loan: any) => !loan.returned_at);
-    
-    let borrowerProfile = null;
-    if (activeLoan?.user_id) {
+    // Fetch profiles for all loans in this book
+    const loanProfilesPromises = book.loans?.map(async loan => {
+      if (!loan.user_id) return null;
       const { data: profileData } = await supabase
         .from('profiles')
         .select('full_name, email')
-        .eq('id', activeLoan.user_id)
+        .eq('id', loan.user_id)
         .single();
-      borrowerProfile = profileData;
-    }
+      return { loanId: loan.id, profile: profileData };
+    }) || [];
 
-    let userRatings = null;
-    let userReactions = null;
+    // Wait for all loan profiles to be fetched
+    const loanProfiles = await Promise.all(loanProfilesPromises);
+    
+    // Create a map of loan ID to profile data for easy lookup
+    const loanProfileMap = new Map(
+      loanProfiles
+        .filter(lp => lp !== null)
+        .map(lp => [lp!.loanId, lp!.profile])
+    );
 
-    if (userId) {
-      const userData = await fetchUserRatingsAndReactions(userId);
-      userRatings = userData.ratings;
-      userReactions = userData.reactions;
-    }
+    // Process loans with their corresponding profiles
+    const processedLoans = (book.loans || []).map(loan => ({
+      user_id: loan.user_id,
+      returned_at: loan.returned_at,
+      lent_to: loan.lent_to,
+      created_at: loan.created_at,
+      borrowerName: loanProfileMap.get(loan.id)?.full_name || 
+                   loanProfileMap.get(loan.id)?.email || 
+                   loan.lent_to
+    }));
+
+    const activeLoan = processedLoans.find(loan => !loan.returned_at);
 
     return {
       id: book.id,
@@ -89,40 +110,14 @@ export const fetchBooks = async (userId: string | undefined = undefined) => {
       userReactions: userReactions?.filter(r => r.book_id === book.id).map(r => r.reaction) || [],
       location: book.location,
       loanDate: activeLoan?.created_at || null,
-      loans: book.loans?.map(async loan => {
-        let profile = null;
-        if (loan.user_id) {
-          const { data: profileData } = await supabase
-            .from('profiles')
-            .select('full_name, email')
-            .eq('id', loan.user_id)
-            .single();
-          profile = profileData;
-        }
-        
-        return {
-          user_id: loan.user_id,
-          returned_at: loan.returned_at,
-          lent_to: loan.lent_to,
-          created_at: loan.created_at,
-          borrowerName: profile?.full_name || profile?.email || loan.lent_to
-        };
-      }),
+      loans: processedLoans,
       bookDescription: book.book_description,
       authorDescription: book.author_description,
       bookType: book.book_type || 'non-fiction'
     } as Book;
   });
 
-  const processedBooks = await Promise.all(processedBooksPromises.map(async (bookPromise) => {
-    const book = await bookPromise;
-    if (book.loans) {
-      book.loans = await Promise.all(book.loans);
-    }
-    return book;
-  }));
-
-  return processedBooks;
+  return Promise.all(processedBooksPromises);
 };
 
 export const addBookToLibrary = async (
