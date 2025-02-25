@@ -50,51 +50,19 @@ export const fetchBooks = async (userId: string | undefined = undefined) => {
     throw booksError;
   }
 
-  // Process user data once for all books
   let userRatings = null;
   let userReactions = null;
+
   if (userId) {
     const userData = await fetchUserRatingsAndReactions(userId);
     userRatings = userData.ratings;
     userReactions = userData.reactions;
   }
 
-  // Process each book's data
-  const processedBooksPromises = booksData.map(async book => {
-    // Fetch profiles for all loans in this book
-    const loanProfilesPromises = book.loans?.map(async loan => {
-      if (!loan.user_id) return null;
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('full_name, email')
-        .eq('id', loan.user_id)
-        .single();
-      return { loanId: loan.id, profile: profileData };
-    }) || [];
-
-    // Wait for all loan profiles to be fetched
-    const loanProfiles = await Promise.all(loanProfilesPromises);
+  // Process the books data
+  const processedBooks = booksData.map(book => {
+    const activeLoan = book.loans?.find((loan: any) => !loan.returned_at);
     
-    // Create a map of loan ID to profile data for easy lookup
-    const loanProfileMap = new Map(
-      loanProfiles
-        .filter(lp => lp !== null)
-        .map(lp => [lp!.loanId, lp!.profile])
-    );
-
-    // Process loans with their corresponding profiles
-    const processedLoans = (book.loans || []).map(loan => ({
-      user_id: loan.user_id,
-      returned_at: loan.returned_at,
-      lent_to: loan.lent_to,
-      created_at: loan.created_at,
-      borrowerName: loanProfileMap.get(loan.id)?.full_name || 
-                   loanProfileMap.get(loan.id)?.email || 
-                   loan.lent_to
-    }));
-
-    const activeLoan = processedLoans.find(loan => !loan.returned_at);
-
     return {
       id: book.id,
       title: book.title,
@@ -103,21 +71,26 @@ export const fetchBooks = async (userId: string | undefined = undefined) => {
       lentTo: activeLoan?.lent_to || null,
       averageRating: book.average_rating,
       aiSummary: book.ai_summary,
-      addedBy: book.profiles?.full_name || book.profiles?.email || 'Unknown',
+      addedBy: book.profiles?.full_name || book.profiles?.email || null,
       createdAt: book.created_at || null,
       userRating: userRatings?.find(r => r.book_id === book.id)?.rating || null,
       reactions: {},
       userReactions: userReactions?.filter(r => r.book_id === book.id).map(r => r.reaction) || [],
       location: book.location,
       loanDate: activeLoan?.created_at || null,
-      loans: processedLoans,
+      loans: book.loans?.map(loan => ({
+        user_id: loan.user_id,
+        returned_at: loan.returned_at,
+        lent_to: loan.lent_to,
+        created_at: loan.created_at
+      })),
       bookDescription: book.book_description,
       authorDescription: book.author_description,
       bookType: book.book_type || 'non-fiction'
     } as Book;
   });
 
-  return Promise.all(processedBooksPromises);
+  return processedBooks;
 };
 
 export const addBookToLibrary = async (
@@ -145,13 +118,7 @@ export const addBookToLibrary = async (
         added_by_user_id: user?.id
       }
     ])
-    .select(`
-      *,
-      profiles (
-        full_name,
-        email
-      )
-    `)
+    .select()
     .single();
 
   if (error) throw error;
@@ -170,7 +137,7 @@ export const addBookToLibrary = async (
     bookDescription: data.book_description,
     authorDescription: data.author_description,
     bookType: data.book_type,
-    addedBy: data.profiles?.full_name || data.profiles?.email || 'Unknown'
+    addedBy: null
   } as Book;
 };
 
