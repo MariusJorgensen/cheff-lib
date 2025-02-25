@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/table";
 import { useAuth } from "./AuthProvider";
 
-interface PendingUser {
+interface User {
   id: string;
   email: string;
   full_name: string | null;
@@ -22,7 +22,7 @@ interface PendingUser {
 }
 
 export function UserApprovalPanel() {
-  const [users, setUsers] = useState<PendingUser[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const { toast } = useToast();
   const { signOut, user } = useAuth();
   const [updating, setUpdating] = useState<string | null>(null);
@@ -31,7 +31,6 @@ export function UserApprovalPanel() {
     const { data, error } = await supabase
       .from('profiles')
       .select('id, email, full_name, created_at, is_approved')
-      .eq('is_approved', false)
       .order('created_at', { ascending: true });
 
     if (error) {
@@ -104,57 +103,72 @@ export function UserApprovalPanel() {
   if (users.length === 0) {
     return (
       <div className="text-center py-8 text-muted-foreground">
-        No pending approval requests.
+        No users found.
       </div>
     );
   }
 
   return (
     <div className="space-y-4">
-      <div className="rounded-lg border overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>User</TableHead>
-              <TableHead className="hidden md:table-cell">Joined</TableHead>
-              <TableHead className="hidden md:table-cell">Status</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {users.map((user) => (
-              <TableRow key={user.id}>
-                <TableCell>
-                  {user.full_name && (
-                    <div className="font-medium">{user.full_name}</div>
-                  )}
-                  <div className="text-sm text-muted-foreground">{user.email}</div>
-                  <div className="text-sm text-muted-foreground md:hidden">
-                    {new Date(user.created_at).toLocaleDateString()}
-                    <br />
-                    Status: Pending
-                  </div>
-                </TableCell>
-                <TableCell className="hidden md:table-cell">
-                  {new Date(user.created_at).toLocaleDateString()}
-                </TableCell>
-                <TableCell className="hidden md:table-cell">
-                  Pending
-                </TableCell>
-                <TableCell className="text-right">
-                  <Button
-                    variant="default"
-                    size="sm"
-                    onClick={() => handleUpdateApproval(user.id, true)}
-                    disabled={updating === user.id}
-                  >
-                    Approve
-                  </Button>
-                </TableCell>
+      <div className="rounded-lg border overflow-hidden">
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>User</TableHead>
+                <TableHead className="hidden md:table-cell">Joined</TableHead>
+                <TableHead className="hidden md:table-cell">Status</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {users.map((user) => (
+                <TableRow key={user.id}>
+                  <TableCell className="min-w-[200px]">
+                    {user.full_name && (
+                      <div className="font-medium">{user.full_name}</div>
+                    )}
+                    <div className="text-sm text-muted-foreground">{user.email}</div>
+                    <div className="text-xs text-muted-foreground md:hidden">
+                      {new Date(user.created_at).toLocaleDateString()}
+                      <br />
+                      Status: {user.is_approved ? 'Approved' : 'Pending'}
+                    </div>
+                  </TableCell>
+                  <TableCell className="hidden md:table-cell whitespace-nowrap">
+                    {new Date(user.created_at).toLocaleDateString()}
+                  </TableCell>
+                  <TableCell className="hidden md:table-cell">
+                    <span className={user.is_approved ? 'text-green-600 dark:text-green-400' : 'text-yellow-600 dark:text-yellow-400'}>
+                      {user.is_approved ? 'Approved' : 'Pending'}
+                    </span>
+                  </TableCell>
+                  <TableCell className="text-right whitespace-nowrap">
+                    {user.is_approved ? (
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleUpdateApproval(user.id, false)}
+                        disabled={updating === user.id}
+                      >
+                        Revoke
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="default"
+                        size="sm"
+                        onClick={() => handleUpdateApproval(user.id, true)}
+                        disabled={updating === user.id}
+                      >
+                        Approve
+                      </Button>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       </div>
     </div>
   );

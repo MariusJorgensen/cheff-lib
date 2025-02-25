@@ -30,10 +30,14 @@ export function AdminPanel() {
               </TabsTrigger>
             </TabsList>
             <TabsContent value="users" className="mt-4">
-              <UserApprovalPanel />
+              <div className="-mx-3 sm:mx-0">
+                <UserApprovalPanel />
+              </div>
             </TabsContent>
             <TabsContent value="books" className="mt-4">
-              <AdminBooksPanel />
+              <div className="-mx-3 sm:mx-0">
+                <AdminBooksPanel />
+              </div>
             </TabsContent>
           </Tabs>
         </div>
