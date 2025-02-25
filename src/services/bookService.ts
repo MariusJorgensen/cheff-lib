@@ -86,7 +86,7 @@ export const fetchBooks = async (userId: string | undefined = undefined) => {
       })),
       bookDescription: book.book_description,
       authorDescription: book.author_description,
-      bookType: book.book_type || 'non-fiction' // Added this line to include book type
+      bookType: book.book_type || 'non-fiction'
     } as Book;
   });
 
@@ -97,10 +97,10 @@ export const addBookToLibrary = async (
   title: string, 
   author: string, 
   imageUrl: string,
-  location: 'Stockholm 🇸🇪' | 'Oslo 🇧🇻',
+  location: 'Stockholm 🇸🇪' | 'Oslo 🇧🇻' | 'Helsingør 🇩🇰',
   bookDescription?: string,
   authorDescription?: string,
-  bookType: 'fiction' | 'non-fiction' = 'non-fiction'
+  bookType: 'fiction' | 'non-fiction' | 'cookbook' = 'non-fiction'
 ) => {
   const { data: { user } } = await supabase.auth.getUser();
   
