@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Book } from "@/types";
 import { BookCard } from "@/components/BookCard";
 import { useAuth } from "@/components/AuthProvider";
@@ -7,12 +7,15 @@ import { useBooks } from "@/hooks/useBooks";
 import { LibraryHeader } from "@/components/LibraryHeader";
 import { LibraryControls } from "@/components/LibraryControls";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 
 const Index = () => {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
   const { user, signOut, isApproved, isAdmin } = useAuth();
   const { books, addBook, lendBook, returnBook } = useBooks(user);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const addBookDialogRef = useRef<{ openDialog: () => void }>(null);
 
   const filteredBooks = books.filter((book) => {
     const searchTerms = search.toLowerCase();
@@ -37,12 +40,19 @@ const Index = () => {
     title: string, 
     author: string, 
     imageUrl: string, 
-    location: 'Stockholm 🇸🇪' | 'Oslo 🇧🇻',
+    location: 'Stockholm 🇸🇪' | 'Oslo 🇧🇻' | 'Helsingør 🇩🇰',
     bookDescription?: string,
     authorDescription?: string
   ) => {
     addBook(title, author, imageUrl, location, bookDescription, authorDescription);
   };
+
+  useKeyboardShortcuts({
+    onFilterChange: setFilter,
+    onSearchFocus: () => searchInputRef.current?.focus(),
+    onClearSearch: () => setSearch(""),
+    onOpenAddBook: () => addBookDialogRef.current?.openDialog(),
+  });
 
   if (!isApproved && !isAdmin) {
     return (
@@ -73,6 +83,8 @@ const Index = () => {
           filter={filter}
           onFilterChange={setFilter}
           onAddBook={handleAddBook}
+          searchInputRef={searchInputRef}
+          addBookDialogRef={addBookDialogRef}
         />
 
         <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">

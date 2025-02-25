@@ -9,6 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { RefObject } from "react";
 
 interface LibraryControlsProps {
   search: string;
@@ -23,6 +24,8 @@ interface LibraryControlsProps {
     bookDescription?: string,
     authorDescription?: string
   ) => void;
+  searchInputRef?: RefObject<HTMLInputElement>;
+  addBookDialogRef?: RefObject<{ openDialog: () => void }>;
 }
 
 export function LibraryControls({
@@ -31,6 +34,8 @@ export function LibraryControls({
   filter,
   onFilterChange,
   onAddBook,
+  searchInputRef,
+  addBookDialogRef,
 }: LibraryControlsProps) {
   return (
     <div className="flex flex-col sm:flex-row gap-4">
@@ -41,6 +46,7 @@ export function LibraryControls({
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
           className="pl-9"
+          ref={searchInputRef}
         />
       </div>
       <Select value={filter} onValueChange={onFilterChange}>
@@ -54,7 +60,7 @@ export function LibraryControls({
           <SelectItem value="my-loans">My Borrowed Books</SelectItem>
         </SelectContent>
       </Select>
-      <AddBookDialog onAddBook={onAddBook} />
+      <AddBookDialog onAddBook={onAddBook} ref={addBookDialogRef} />
     </div>
   );
 }
