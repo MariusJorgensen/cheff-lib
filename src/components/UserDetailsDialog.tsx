@@ -43,7 +43,7 @@ interface SupabaseBook {
   author: string;
   created_at: string;
   image_url: string;
-  location: 'Stockholm 🇸🇪' | 'Oslo 🇧🇻';
+  location: 'Stockholm 🇸🇪' | 'Oslo 🇧🇻' | 'Helsingør 🇩🇰';
   book_type: 'fiction' | 'non-fiction' | 'cookbook';
 }
 

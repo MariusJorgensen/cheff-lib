@@ -312,7 +312,7 @@ export type Database = {
       }
     }
     Enums: {
-      book_location: "Stockholm 🇸🇪" | "Oslo 🇧🇻"
+      book_location: "Stockholm 🇸🇪" | "Oslo 🇧🇻" | "Helsingør 🇩🇰"
       book_type: "fiction" | "non-fiction" | "cookbook"
     }
     CompositeTypes: {

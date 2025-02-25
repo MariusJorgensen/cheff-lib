@@ -12,7 +12,7 @@ export interface Book {
   userRating?: number | null;
   reactions?: { [key: string]: number };
   userReactions?: string[];
-  location: 'Stockholm 🇸🇪' | 'Oslo 🇧🇻';
+  location: 'Stockholm 🇸🇪' | 'Oslo 🇧🇻' | 'Helsingør 🇩🇰';
   loanDate?: string | null;
   loans?: Array<{
     user_id: string;

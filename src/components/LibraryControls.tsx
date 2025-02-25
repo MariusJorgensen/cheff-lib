@@ -19,7 +19,7 @@ interface LibraryControlsProps {
     title: string, 
     author: string, 
     imageUrl: string, 
-    location: 'Stockholm 🇸🇪' | 'Oslo 🇧🇻',
+    location: 'Stockholm 🇸🇪' | 'Oslo 🇧🇻' | 'Helsingør 🇩🇰',
     bookDescription?: string,
     authorDescription?: string
   ) => void;
