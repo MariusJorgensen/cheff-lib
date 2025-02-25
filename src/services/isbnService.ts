@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 interface GoogleBooksResponse {
@@ -120,6 +119,34 @@ const searchGoogleBooks = async (isbn: string) => {
   }
 };
 
+const searchWithAI = async (isbn: string) => {
+  try {
+    const { data, error } = await supabase.functions.invoke('search-book-with-ai', {
+      body: { isbn }
+    });
+
+    if (error || !data.bookData) {
+      console.error('Error searching with AI:', error);
+      return null;
+    }
+
+    return {
+      title: data.bookData.title,
+      author: data.bookData.author || 'Unknown Author',
+      imageUrl: 'https://placehold.co/400x600?text=No+Cover+Available',
+      description: data.bookData.description,
+      rawData: {
+        title: data.bookData.title,
+        authors: [data.bookData.author],
+        description: data.bookData.description
+      }
+    };
+  } catch (error) {
+    console.error('Error in AI search:', error);
+    return null;
+  }
+};
+
 export const lookupISBN = async (isbn: string): Promise<{
   title: string;
   author: string;
@@ -139,7 +166,6 @@ export const lookupISBN = async (isbn: string): Promise<{
     if (googleBooksResult) {
       console.log('Found book in Google Books:', googleBooksResult);
       
-      // Generate descriptions and determine book type in parallel
       const [descriptions, bookType] = await Promise.all([
         generateDescriptions(googleBooksResult.rawData),
         determineBookType(googleBooksResult.rawData)
@@ -158,7 +184,6 @@ export const lookupISBN = async (isbn: string): Promise<{
     if (librisResult) {
       console.log('Found book in LIBRIS:', librisResult);
       
-      // Generate descriptions and determine book type for LIBRIS result
       const [descriptions, bookType] = await Promise.all([
         generateDescriptions({ 
           title: librisResult.title, 
@@ -174,6 +199,25 @@ export const lookupISBN = async (isbn: string): Promise<{
 
       return {
         ...librisResult,
+        bookDescription: descriptions?.bookDescription,
+        authorDescription: descriptions?.authorDescription,
+        bookType
+      };
+    }
+
+    // If not found in either service, try AI search
+    console.log('Trying AI search for ISBN:', cleanISBN);
+    const aiResult = await searchWithAI(cleanISBN);
+    if (aiResult) {
+      console.log('Found book with AI:', aiResult);
+      
+      const [descriptions, bookType] = await Promise.all([
+        generateDescriptions(aiResult.rawData),
+        determineBookType(aiResult.rawData)
+      ]);
+
+      return {
+        ...aiResult,
         bookDescription: descriptions?.bookDescription,
         authorDescription: descriptions?.authorDescription,
         bookType
