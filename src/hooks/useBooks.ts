@@ -46,6 +46,7 @@ export function useBooks(user: User | null) {
         title: "Success",
         description: `${title} has been added to the library.`,
       });
+      await refreshBooks();
     } catch (error) {
       console.error('Error adding book:', error);
       toast({
@@ -63,6 +64,7 @@ export function useBooks(user: User | null) {
         title: "Success",
         description: `Book has been lent successfully.`,
       });
+      await refreshBooks();
     } catch (error) {
       console.error('Error lending book:', error);
       toast({
@@ -80,6 +82,7 @@ export function useBooks(user: User | null) {
         title: "Success",
         description: "Book has been returned to the library.",
       });
+      await refreshBooks();
     } catch (error) {
       console.error('Error returning book:', error);
       toast({
@@ -99,7 +102,6 @@ export function useBooks(user: User | null) {
     console.log('Setting up realtime subscriptions for user:', user.id);
     refreshBooks();
 
-    // Create a single channel for both books and loans changes
     const channel = supabase
       .channel('book-changes')
       .on(
@@ -133,12 +135,11 @@ export function useBooks(user: User | null) {
         }
       });
 
-    // Cleanup subscription on unmount or user change
     return () => {
       console.log('Cleaning up realtime subscriptions');
       supabase.removeChannel(channel);
     };
-  }, [user]); // Only re-run when user changes
+  }, [user]);
 
-  return { books, addBook, lendBook, returnBook };
+  return { books, addBook, lendBook, returnBook, refreshBooks };
 }
