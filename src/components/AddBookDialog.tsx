@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, forwardRef, useImperativeHandle } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -29,12 +29,11 @@ interface AddBookDialogProps {
     imageUrl: string, 
     location: 'Stockholm 🇸🇪' | 'Oslo 🇧🇻' | 'Helsingør 🇩🇰',
     bookDescription?: string,
-    authorDescription?: string,
-    bookType?: 'fiction' | 'non-fiction' | 'cookbook'
+    authorDescription?: string
   ) => void;
 }
 
-export function AddBookDialog({ onAddBook }: AddBookDialogProps) {
+export const AddBookDialog = forwardRef<{ openDialog: () => void }, AddBookDialogProps>(({ onAddBook }, ref) => {
   const [open, setOpen] = useState(false);
   const [isbn, setIsbn] = useState("");
   const [title, setTitle] = useState("");
@@ -212,7 +211,7 @@ export function AddBookDialog({ onAddBook }: AddBookDialogProps) {
     e.preventDefault();
     if (title && author && location) {
       const finalImageUrl = imageUrl || "https://placehold.co/400x600?text=No+Cover+Available";
-      onAddBook(title, author, finalImageUrl, location, bookDescription, authorDescription, bookType);
+      onAddBook(title, author, finalImageUrl, location, bookDescription, authorDescription);
       setIsbn("");
       setTitle("");
       setAuthor("");
@@ -224,6 +223,10 @@ export function AddBookDialog({ onAddBook }: AddBookDialogProps) {
       setOpen(false);
     }
   };
+
+  useImperativeHandle(ref, () => ({
+    openDialog: () => setOpen(true)
+  }));
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -381,4 +384,4 @@ export function AddBookDialog({ onAddBook }: AddBookDialogProps) {
       </DialogContent>
     </Dialog>
   );
-}
+});
