@@ -23,8 +23,7 @@ export const fetchBooks = async (userId: string | undefined = undefined) => {
     .from('books')
     .select(`
       *,
-      added_by_user_id,
-      profiles!books_added_by_user_id_fkey (
+      profiles (
         full_name,
         email
       ),
@@ -34,7 +33,7 @@ export const fetchBooks = async (userId: string | undefined = undefined) => {
         returned_at,
         created_at,
         lent_to,
-        profiles!inner (
+        profiles (
           full_name,
           email
         )
@@ -126,7 +125,7 @@ export const addBookToLibrary = async (
     ])
     .select(`
       *,
-      profiles!books_added_by_user_id_fkey (
+      profiles (
         full_name,
         email
       )
