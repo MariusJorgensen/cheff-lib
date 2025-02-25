@@ -31,12 +31,16 @@ export function UserApprovalPanel() {
 
   const fetchUsers = async () => {
     try {
+      console.log("Fetching users...");
       // First get all profiles
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select('id, email, full_name, created_at, is_approved');
 
-      if (profilesError) throw profilesError;
+      if (profilesError) {
+        console.error('Error fetching profiles:', profilesError);
+        throw profilesError;
+      }
 
       // Then get admin status for each profile
       const usersWithAdminStatus = await Promise.all(
@@ -47,9 +51,15 @@ export function UserApprovalPanel() {
         })
       );
 
+      console.log("Users fetched:", usersWithAdminStatus);
       setUsers(usersWithAdminStatus);
     } catch (error) {
-      console.error('Error fetching users:', error);
+      console.error('Error in fetchUsers:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch users. Please try again later.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -65,6 +75,7 @@ export function UserApprovalPanel() {
           table: 'profiles' 
         }, 
         () => {
+          console.log("Profiles table changed, refreshing users...");
           fetchUsers();
         }
       )
@@ -75,6 +86,7 @@ export function UserApprovalPanel() {
           table: 'admin_users'
         },
         () => {
+          console.log("Admin users table changed, refreshing users...");
           fetchUsers();
         }
       )
@@ -110,6 +122,7 @@ export function UserApprovalPanel() {
 
       fetchUsers();
     } catch (error: any) {
+      console.error('Error updating approval status:', error);
       toast({
         title: "Error",
         description: error.message,
@@ -151,6 +164,7 @@ export function UserApprovalPanel() {
 
       fetchUsers();
     } catch (error: any) {
+      console.error('Error updating admin role:', error);
       toast({
         title: "Error",
         description: error.message,
