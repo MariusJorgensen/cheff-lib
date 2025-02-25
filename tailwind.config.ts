@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -74,7 +75,7 @@ export default {
       },
       fontFamily: {
         serif: ['Merriweather', 'serif'],
-        sans: ['Inter', 'sans-serif'],
+        sans: ['Roboto', 'sans-serif'],
       },
     },
   },
