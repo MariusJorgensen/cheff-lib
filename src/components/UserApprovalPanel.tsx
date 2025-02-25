@@ -3,16 +3,10 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { useAuth } from "./AuthProvider";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { User, UserCog, Check, X, Shield, ShieldOff } from "lucide-react";
 
 interface User {
   id: string;
@@ -32,7 +26,6 @@ export function UserApprovalPanel() {
   const fetchUsers = async () => {
     try {
       console.log("Fetching users...");
-      // First get all profiles
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select('id, email, full_name, created_at, is_approved');
@@ -42,12 +35,14 @@ export function UserApprovalPanel() {
         throw profilesError;
       }
 
-      // Then get admin status for each profile
       const usersWithAdminStatus = await Promise.all(
         (profiles || []).map(async (profile) => {
-          const { data: isAdmin } = await supabase
-            .rpc('is_admin', { user_id: profile.id });
-          return { ...profile, is_admin: isAdmin || false };
+          const { data: adminData } = await supabase
+            .from('admin_users')
+            .select('id')
+            .eq('id', profile.id)
+            .maybeSingle();
+          return { ...profile, is_admin: !!adminData };
         })
       );
 
@@ -178,97 +173,99 @@ export function UserApprovalPanel() {
   if (users.length === 0) {
     return (
       <div className="text-center py-8 text-muted-foreground">
+        <User className="w-12 h-12 mx-auto mb-4 opacity-50" />
         No users found.
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
-      <div className="rounded-lg border overflow-hidden">
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>User</TableHead>
-                <TableHead className="hidden md:table-cell">Joined</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {users.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell className="min-w-[200px]">
-                    <div className="space-y-1">
-                      {user.full_name && (
-                        <div className="font-medium">{user.full_name}</div>
-                      )}
-                      <div className="text-sm text-muted-foreground">{user.email}</div>
-                      <div className="flex gap-2 md:hidden">
-                        {user.is_admin && (
-                          <Badge variant="secondary">Admin</Badge>
-                        )}
-                      </div>
-                      <div className="text-xs text-muted-foreground md:hidden">
-                        {new Date(user.created_at).toLocaleDateString()}
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell whitespace-nowrap">
-                    {new Date(user.created_at).toLocaleDateString()}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex flex-col gap-2">
-                      <span className={user.is_approved ? 'text-green-600 dark:text-green-400' : 'text-yellow-600 dark:text-yellow-400'}>
-                        {user.is_approved ? 'Approved' : 'Pending'}
-                      </span>
-                      <div className="hidden md:block">
-                        {user.is_admin && (
-                          <Badge variant="secondary">Admin</Badge>
-                        )}
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex flex-col gap-2 items-end">
-                      {user.is_approved ? (
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => handleUpdateApproval(user.id, false)}
-                          disabled={updating === user.id}
-                          className="w-full sm:w-auto"
-                        >
-                          Revoke Access
-                        </Button>
-                      ) : (
-                        <Button
-                          variant="default"
-                          size="sm"
-                          onClick={() => handleUpdateApproval(user.id, true)}
-                          disabled={updating === user.id}
-                          className="w-full sm:w-auto"
-                        >
-                          Approve
-                        </Button>
-                      )}
-                      <Button
-                        variant={user.is_admin ? "destructive" : "secondary"}
-                        size="sm"
-                        onClick={() => handleUpdateAdminRole(user.id, !user.is_admin)}
-                        disabled={updating === user.id}
-                        className="w-full sm:w-auto"
-                      >
-                        {user.is_admin ? 'Remove Admin' : 'Make Admin'}
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {users.map((user) => (
+          <Card key={user.id} className="relative overflow-hidden group hover:shadow-lg transition-shadow duration-200">
+            <CardContent className="p-6">
+              {/* Status Indicator */}
+              <div className="absolute top-0 right-0 p-3">
+                {user.is_admin ? (
+                  <Badge variant="secondary" className="bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
+                    <Shield className="w-3 h-3 mr-1" />
+                    Admin
+                  </Badge>
+                ) : user.is_approved ? (
+                  <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                    <Check className="w-3 h-3 mr-1" />
+                    Approved
+                  </Badge>
+                ) : (
+                  <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
+                    <UserCog className="w-3 h-3 mr-1" />
+                    Pending
+                  </Badge>
+                )}
+              </div>
+
+              {/* User Info */}
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  {user.full_name && (
+                    <h3 className="font-medium text-lg">{user.full_name}</h3>
+                  )}
+                  <p className="text-sm text-muted-foreground break-all">{user.email}</p>
+                  <p className="text-xs text-muted-foreground">
+                    Joined {new Date(user.created_at).toLocaleDateString()}
+                  </p>
+                </div>
+
+                {/* Actions */}
+                <div className="space-y-2 pt-4">
+                  {user.is_approved ? (
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleUpdateApproval(user.id, false)}
+                      disabled={updating === user.id}
+                      className="w-full"
+                    >
+                      <X className="w-4 h-4 mr-1" />
+                      Revoke Access
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="default"
+                      size="sm"
+                      onClick={() => handleUpdateApproval(user.id, true)}
+                      disabled={updating === user.id}
+                      className="w-full"
+                    >
+                      <Check className="w-4 h-4 mr-1" />
+                      Approve
+                    </Button>
+                  )}
+                  <Button
+                    variant={user.is_admin ? "destructive" : "secondary"}
+                    size="sm"
+                    onClick={() => handleUpdateAdminRole(user.id, !user.is_admin)}
+                    disabled={updating === user.id}
+                    className="w-full"
+                  >
+                    {user.is_admin ? (
+                      <>
+                        <ShieldOff className="w-4 h-4 mr-1" />
+                        Remove Admin
+                      </>
+                    ) : (
+                      <>
+                        <Shield className="w-4 h-4 mr-1" />
+                        Make Admin
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
     </div>
   );
