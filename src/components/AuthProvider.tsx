@@ -1,3 +1,4 @@
+
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -45,6 +46,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       try {
+        setIsLoading(true);
+        
         if (currentSession?.user) {
           console.log("Setting session and user");
           setSession(currentSession);
@@ -87,16 +90,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           description: "Failed to initialize session",
           variant: "destructive",
         });
-      }
-
-      if (mounted && !initializationComplete) {
-        console.log("Marking initialization as complete");
-        setInitializationComplete(true);
+      } finally {
+        if (mounted) {
+          setIsLoading(false);
+          setInitializationComplete(true);
+        }
       }
     };
 
     const initialize = async () => {
       console.log("Initializing auth state");
+      setIsLoading(true);
       
       if (!mounted) {
         console.log("Component unmounted, skipping initialization");
@@ -121,7 +125,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           description: "Failed to initialize session",
           variant: "destructive",
         });
-        setInitializationComplete(true);
+      } finally {
+        if (mounted) {
+          setIsLoading(false);
+          setInitializationComplete(true);
+        }
       }
     };
 
@@ -175,6 +183,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     try {
+      setIsLoading(true);
       await supabase.auth.signOut();
       setSession(null);
       setUser(null);
@@ -188,15 +197,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         description: "Failed to sign out",
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  console.log("Auth provider state:", { initializationComplete, session, user });
+  console.log("Auth provider state:", { 
+    initializationComplete, 
+    isLoading,
+    session, 
+    user 
+  });
 
-  if (!initializationComplete) {
+  if (!initializationComplete || isLoading) {
     console.log("Showing loading spinner...");
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="fixed inset-0 flex items-center justify-center bg-background">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-white"></div>
       </div>
     );
