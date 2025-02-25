@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
 interface GoogleBooksResponse {
@@ -12,17 +13,6 @@ interface GoogleBooksResponse {
       description?: string;
     };
   }[];
-}
-
-interface LibrisResponse {
-  xsearch: {
-    list: Array<{
-      title: string;
-      creator: string;
-      isbn: string;
-      type: string[];
-    }>;
-  };
 }
 
 const generateDescriptions = async (bookInfo: any) => {
@@ -75,78 +65,6 @@ const determineBookType = async (bookInfo: any): Promise<'fiction' | 'non-fictio
   }
 };
 
-const searchLibris = async (isbn: string) => {
-  try {
-    const response = await fetch(`https://libris.kb.se/xsearch?query=isbn:${isbn}&format=json`);
-    const data = await response.json() as LibrisResponse;
-    
-    if (data.xsearch.list.length === 0) {
-      return null;
-    }
-
-    const book = data.xsearch.list[0];
-    return {
-      title: book.title,
-      author: book.creator || 'Unknown Author',
-      imageUrl: 'https://placehold.co/400x600?text=No+Cover+Available', // LIBRIS doesn't provide cover images
-    };
-  } catch (error) {
-    console.error('Error searching LIBRIS:', error);
-    return null;
-  }
-};
-
-const searchGoogleBooks = async (isbn: string) => {
-  try {
-    const response = await fetch(`https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}`);
-    const data = await response.json() as GoogleBooksResponse;
-    
-    if (!data.items?.[0]) {
-      return null;
-    }
-
-    const bookInfo = data.items[0].volumeInfo;
-    return {
-      title: bookInfo.title,
-      author: bookInfo.authors?.[0] || 'Unknown Author',
-      imageUrl: bookInfo.imageLinks?.thumbnail?.replace('http://', 'https://') || 'https://placehold.co/400x600?text=No+Cover+Available',
-      description: bookInfo.description,
-      rawData: bookInfo
-    };
-  } catch (error) {
-    console.error('Error searching Google Books:', error);
-    return null;
-  }
-};
-
-const searchWithAI = async (isbn: string) => {
-  try {
-    const { data, error } = await supabase.functions.invoke('search-book-with-ai', {
-      body: { isbn }
-    });
-
-    if (error || !data.bookData) {
-      console.error('Error searching with AI:', error);
-      return null;
-    }
-
-    return {
-      title: data.bookData.title,
-      author: data.bookData.author || 'Unknown Author',
-      imageUrl: 'https://placehold.co/400x600?text=No+Cover+Available',
-      description: data.bookData.description,
-      rawData: {
-        title: data.bookData.title,
-        authors: [data.bookData.author],
-        description: data.bookData.description
-      }
-    };
-  } catch (error) {
-    console.error('Error in AI search:', error);
-    return null;
-  }
-};
-
 export const lookupISBN = async (isbn: string): Promise<{
   title: string;
   author: string;
@@ -161,71 +79,38 @@ export const lookupISBN = async (isbn: string): Promise<{
     
     console.log('Looking up ISBN:', cleanISBN);
     
-    // Try Google Books first
-    const googleBooksResult = await searchGoogleBooks(cleanISBN);
-    if (googleBooksResult) {
-      console.log('Found book in Google Books:', googleBooksResult);
-      
-      const [descriptions, bookType] = await Promise.all([
-        generateDescriptions(googleBooksResult.rawData),
-        determineBookType(googleBooksResult.rawData)
-      ]);
-      
-      return {
-        ...googleBooksResult,
-        bookDescription: descriptions?.bookDescription,
-        authorDescription: descriptions?.authorDescription,
-        bookType
-      };
+    // First get the book metadata from Google Books
+    const response = await fetch(`https://www.googleapis.com/books/v1/volumes?q=isbn:${cleanISBN}`);
+    const data = await response.json() as GoogleBooksResponse;
+    
+    if (!data.items?.[0]) {
+      console.log('No book found for ISBN:', isbn);
+      return null;
     }
 
-    // If not found in Google Books, try LIBRIS
-    const librisResult = await searchLibris(cleanISBN);
-    if (librisResult) {
-      console.log('Found book in LIBRIS:', librisResult);
-      
-      const [descriptions, bookType] = await Promise.all([
-        generateDescriptions({ 
-          title: librisResult.title, 
-          authors: [librisResult.author],
-          description: '' 
-        }),
-        determineBookType({ 
-          title: librisResult.title, 
-          authors: [librisResult.author],
-          description: '' 
-        })
-      ]);
+    const bookInfo = data.items[0].volumeInfo;
+    console.log('Found book info:', bookInfo);
+    
+    // First return basic info
+    const basicInfo = {
+      title: bookInfo.title,
+      author: bookInfo.authors?.[0] || 'Unknown Author',
+      imageUrl: bookInfo.imageLinks?.thumbnail?.replace('http://', 'https://') || 'https://placehold.co/400x600?text=No+Cover+Available',
+    };
 
-      return {
-        ...librisResult,
-        bookDescription: descriptions?.bookDescription,
-        authorDescription: descriptions?.authorDescription,
-        bookType
-      };
-    }
-
-    // If not found in either service, try AI search
-    console.log('Trying AI search for ISBN:', cleanISBN);
-    const aiResult = await searchWithAI(cleanISBN);
-    if (aiResult) {
-      console.log('Found book with AI:', aiResult);
-      
-      const [descriptions, bookType] = await Promise.all([
-        generateDescriptions(aiResult.rawData),
-        determineBookType(aiResult.rawData)
-      ]);
-
-      return {
-        ...aiResult,
-        bookDescription: descriptions?.bookDescription,
-        authorDescription: descriptions?.authorDescription,
-        bookType
-      };
-    }
-
-    console.log('No book found for ISBN:', isbn);
-    return null;
+    // Generate descriptions and determine book type in parallel
+    const [descriptions, bookType] = await Promise.all([
+      generateDescriptions(bookInfo),
+      determineBookType(bookInfo)
+    ]);
+    
+    // Return complete info
+    return {
+      ...basicInfo,
+      bookDescription: descriptions?.bookDescription,
+      authorDescription: descriptions?.authorDescription,
+      bookType
+    };
   } catch (error) {
     console.error('Error looking up ISBN:', error);
     return null;
