@@ -9,6 +9,14 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const cleanJsonString = (str: string) => {
+  // Remove markdown code blocks
+  str = str.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+  // Remove any leading/trailing whitespace
+  str = str.trim();
+  return str;
+};
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -39,32 +47,35 @@ serve(async (req) => {
               "language": "string (e.g. 'no', 'sv', 'da', 'en')"
             }
             
-            If you're not confident about any field, use null for that field's value. Make sure the response is VALID JSON.`
+            Return ONLY the JSON object without any markdown formatting or code blocks. If you're not confident about any field, use null for that field's value.`
           },
           {
             role: 'user',
-            content: `Find detailed information about the book with ISBN: ${isbn}. This is a Scandinavian book. Return ONLY a valid JSON object, no other text or explanations.`
+            content: `Find detailed information about the book with ISBN: ${isbn}. This is a Scandinavian book. Return ONLY the JSON object without any markdown or code blocks.`
           }
         ],
-        temperature: 0.5 // Lower temperature for more consistent JSON output
+        temperature: 0.5
       }),
     });
 
     const data = await response.json();
-    console.log('OpenAI response:', data.choices[0]?.message?.content);
+    console.log('Raw OpenAI response:', data.choices[0]?.message?.content);
     
     let bookData = null;
     try {
       const content = data.choices[0]?.message?.content || '';
-      // Try to extract JSON if it's wrapped in any text
-      const jsonMatch = content.match(/\{[\s\S]*\}/);
-      const jsonString = jsonMatch ? jsonMatch[0] : content;
-      bookData = JSON.parse(jsonString);
+      const cleanContent = cleanJsonString(content);
+      console.log('Cleaned content:', cleanContent);
       
+      // Try to extract JSON if it's still wrapped in any text
+      const jsonMatch = cleanContent.match(/\{[\s\S]*\}/);
+      const jsonString = jsonMatch ? jsonMatch[0] : cleanContent;
+      
+      bookData = JSON.parse(jsonString);
       console.log('Parsed book data:', bookData);
     } catch (error) {
       console.error('Error parsing AI response:', error);
-      console.error('Raw content:', data.choices[0]?.message?.content);
+      console.error('Clean content that failed to parse:', cleanContent);
     }
 
     return new Response(JSON.stringify({ bookData }), {
