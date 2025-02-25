@@ -74,8 +74,8 @@ export default {
         "accordion-up": "accordion-up 0.2s ease-out",
       },
       fontFamily: {
-        serif: ['Merriweather', 'serif'],
         sans: ['Roboto', 'sans-serif'],
+        serif: ['Roboto', 'sans-serif'],
       },
     },
   },
