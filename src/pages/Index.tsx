@@ -7,7 +7,6 @@ import { useBooks } from "@/hooks/useBooks";
 import { LibraryHeader } from "@/components/LibraryHeader";
 import { LibraryControls } from "@/components/LibraryControls";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { UserApprovalPanel } from "@/components/UserApprovalPanel";
 
 const Index = () => {
   const [search, setSearch] = useState("");
@@ -67,8 +66,6 @@ const Index = () => {
           userEmail={user?.email}
           onSignOut={signOut}
         />
-        
-        {isAdmin && <UserApprovalPanel />}
 
         <LibraryControls
           search={search}
