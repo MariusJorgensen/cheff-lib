@@ -3,8 +3,6 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { Menu, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FeedbackDialog } from "@/components/FeedbackDialog";
-import { useAuth } from "@/components/AuthProvider";
-import { useNavigate } from "react-router-dom";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,9 +17,6 @@ interface LibraryHeaderProps {
 }
 
 export function LibraryHeader({ userEmail, onSignOut }: LibraryHeaderProps) {
-  const { isAdmin } = useAuth();
-  const navigate = useNavigate();
-
   return (
     <div className="flex justify-between items-center">
       <h1 className="text-4xl font-bold flex items-center gap-1">
@@ -53,15 +48,6 @@ export function LibraryHeader({ userEmail, onSignOut }: LibraryHeaderProps) {
             <DropdownMenuItem className="text-muted-foreground">
               {userEmail}
             </DropdownMenuItem>
-            {isAdmin && (
-              <>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => navigate('/admin')}>
-                  Admin Dashboard
-                </DropdownMenuItem>
-              </>
-            )}
-            <DropdownMenuSeparator />
             <DropdownMenuItem onClick={onSignOut}>
               Sign Out
             </DropdownMenuItem>
@@ -92,11 +78,6 @@ export function LibraryHeader({ userEmail, onSignOut }: LibraryHeaderProps) {
             <DropdownMenuItem className="text-muted-foreground">
               {userEmail}
             </DropdownMenuItem>
-            {isAdmin && (
-              <DropdownMenuItem onClick={() => navigate('/admin')}>
-                Admin Dashboard
-              </DropdownMenuItem>
-            )}
             <DropdownMenuItem onClick={onSignOut}>
               Sign Out
             </DropdownMenuItem>
