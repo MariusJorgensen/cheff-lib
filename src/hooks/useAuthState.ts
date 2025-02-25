@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -11,7 +11,7 @@ export function useAuthState() {
   const [isLoading, setIsLoading] = useState(false);
   const [initializationComplete, setInitializationComplete] = useState(false);
 
-  const refreshSession = async () => {
+  const refreshSession = useCallback(async () => {
     try {
       console.log("Refreshing session...");
       const { data: { session: freshSession }, error } = await supabase.auth.getSession();
@@ -25,7 +25,7 @@ export function useAuthState() {
       console.error("Exception in refreshSession:", error);
       return null;
     }
-  };
+  }, []);
 
   return {
     session,

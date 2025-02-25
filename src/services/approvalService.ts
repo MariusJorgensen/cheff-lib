@@ -34,8 +34,12 @@ export async function checkApprovalStatus(userId: string) {
       return { approved: false, isAdmin: false };
     }
 
-    const { data: adminStatus, error: adminError } = await supabase
-      .rpc('is_admin', { user_id: userId });
+    // Directly query admin_users table
+    const { data: adminData, error: adminError } = await supabase
+      .from('admin_users')
+      .select('id')
+      .eq('id', userId)
+      .maybeSingle();
 
     if (adminError) {
       console.error('Error checking admin status:', adminError);
@@ -44,7 +48,7 @@ export async function checkApprovalStatus(userId: string) {
 
     return {
       approved: !!profile?.is_approved,
-      isAdmin: !!adminStatus
+      isAdmin: !!adminData
     };
   } catch (error) {
     console.error('Error in checkApprovalStatus:', error);
