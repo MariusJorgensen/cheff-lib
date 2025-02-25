@@ -31,6 +31,7 @@ export function UserApprovalPanel() {
     const { data, error } = await supabase
       .from('profiles')
       .select('id, email, full_name, created_at, is_approved')
+      .eq('is_approved', false)
       .order('created_at', { ascending: true });
 
     if (error) {
@@ -100,9 +101,17 @@ export function UserApprovalPanel() {
     }
   };
 
+  if (users.length === 0) {
+    return (
+      <div className="text-center py-8 text-muted-foreground">
+        No pending approval requests.
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
-      <div className="rounded-lg border">
+      <div className="rounded-lg border overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
@@ -123,23 +132,23 @@ export function UserApprovalPanel() {
                   <div className="text-sm text-muted-foreground md:hidden">
                     {new Date(user.created_at).toLocaleDateString()}
                     <br />
-                    Status: {user.is_approved ? 'Approved' : 'Pending'}
+                    Status: Pending
                   </div>
                 </TableCell>
                 <TableCell className="hidden md:table-cell">
                   {new Date(user.created_at).toLocaleDateString()}
                 </TableCell>
                 <TableCell className="hidden md:table-cell">
-                  {user.is_approved ? 'Approved' : 'Pending'}
+                  Pending
                 </TableCell>
                 <TableCell className="text-right">
                   <Button
-                    variant={user.is_approved ? "destructive" : "default"}
+                    variant="default"
                     size="sm"
-                    onClick={() => handleUpdateApproval(user.id, !user.is_approved)}
+                    onClick={() => handleUpdateApproval(user.id, true)}
                     disabled={updating === user.id}
                   >
-                    {user.is_approved ? 'Revoke' : 'Approve'}
+                    Approve
                   </Button>
                 </TableCell>
               </TableRow>
