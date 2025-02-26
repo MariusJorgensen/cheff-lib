@@ -36,7 +36,7 @@ export function BookCard({ book, onLend, onReturn }: BookCardProps) {
                 {book.lentTo ? "On Loan" : "Available"}
               </Badge>
             </div>
-            <div className="h-36 sm:h-52 w-full overflow-hidden rounded-t-lg">
+            <div className="h-40 sm:h-64 w-full overflow-hidden rounded-t-lg">
               <img
                 src={book.imageUrl}
                 alt={book.title}
@@ -60,16 +60,13 @@ export function BookCard({ book, onLend, onReturn }: BookCardProps) {
             </div>
 
             <div className="flex-1 flex flex-col justify-end">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4 mt-2 sm:mt-4">
-                <div className="flex items-center gap-2 text-muted-foreground transition-colors hover:text-foreground">
-                  <span className="flex-shrink-0 text-sm sm:text-base">📚</span>
-                  <span className="capitalize text-sm sm:text-base font-medium">{book.bookType}</span>
-                </div>
-
-                <div className="flex items-center gap-2 text-muted-foreground transition-colors hover:text-foreground">
-                  <span className="flex-shrink-0 text-sm sm:text-base">📍</span>
-                  <span className="text-sm sm:text-base font-medium">{book.location}</span>
-                </div>
+              <div className="flex flex-wrap gap-2 mt-2 sm:mt-4">
+                <Badge variant="outline" className="capitalize">
+                  <span className="mr-1">📚</span>{book.bookType}
+                </Badge>
+                <Badge variant="outline">
+                  <span className="mr-1">📍</span>{book.location}
+                </Badge>
               </div>
 
               <div className="text-xs sm:text-sm text-muted-foreground pt-2 sm:pt-4 font-medium">
