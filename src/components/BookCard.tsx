@@ -50,21 +50,21 @@ export function BookCard({ book, onLend, onReturn }: BookCardProps) {
           </div>
           <div className="flex-1 flex flex-col p-2 sm:p-6 pt-0 sm:pt-0">
             <div className="space-y-1">
-              <CardTitle className="text-base sm:text-3xl !leading-tight line-clamp-2 font-bold">
+              <CardTitle className="text-sm sm:text-lg !leading-tight line-clamp-2 font-bold">
                 {book.title}
               </CardTitle>
               <div className="flex items-center gap-2 text-muted-foreground transition-colors hover:text-foreground">
-                <span className="flex-shrink-0 text-sm sm:text-base">📝</span>
-                <span className="line-clamp-1 text-sm sm:text-base font-medium">{book.author}</span>
+                <span className="flex-shrink-0 text-xs sm:text-sm">📝</span>
+                <span className="line-clamp-1 text-xs sm:text-sm font-medium">{book.author}</span>
               </div>
             </div>
 
             <div className="flex-1 flex flex-col justify-end">
               <div className="flex flex-wrap gap-2 mt-2 sm:mt-4">
-                <Badge variant="outline" className="capitalize">
+                <Badge variant="outline" className="capitalize text-xs">
                   <span className="mr-1">📚</span>{book.bookType}
                 </Badge>
-                <Badge variant="outline">
+                <Badge variant="outline" className="text-xs">
                   <span className="mr-1">📍</span>{book.location}
                 </Badge>
               </div>
