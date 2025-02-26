@@ -20,17 +20,19 @@ export function BookImageSection({ book }: BookImageSectionProps) {
   return (
     <>
       <div className="flex flex-col md:flex-row md:gap-4">
-        <img
-          src={book.imageUrl}
-          alt={book.title}
-          className="w-full md:w-36 h-64 md:h-48 object-cover rounded-lg cursor-zoom-in transition-transform hover:scale-105 mb-4 md:mb-0"
-          onClick={() => setShowFullImage(true)}
-          onError={(e) => {
-            const target = e.target as HTMLImageElement;
-            target.src = "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b";
-          }}
-        />
-        <div className="flex-1 space-y-4">
+        <div className="bg-white p-4 rounded-lg">
+          <img
+            src={book.imageUrl}
+            alt={book.title}
+            className="w-full md:w-48 h-64 md:h-64 object-contain cursor-zoom-in transition-transform hover:scale-105"
+            onClick={() => setShowFullImage(true)}
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              target.src = "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b";
+            }}
+          />
+        </div>
+        <div className="flex-1 space-y-4 mt-4 md:mt-0">
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-muted-foreground">
               <span>📝</span>
