@@ -30,17 +30,17 @@ export function BookCard({ book, onLend, onReturn }: BookCardProps) {
         onClick={handleCardClick}
       >
         <Card className="transition-transform hover:scale-105 h-[320px] sm:h-[440px] flex flex-col bg-card/50">
-          <div className="relative">
-            <div className="absolute top-1 right-1 sm:top-2 sm:right-2 z-10">
+          <div className="relative p-2 sm:p-4">
+            <div className="absolute top-3 right-3 sm:top-6 sm:right-6 z-10">
               <Badge variant={book.lentTo ? "destructive" : "secondary"} className="text-xs sm:text-sm px-1.5 sm:px-2.5">
                 {book.lentTo ? "On Loan" : "Available"}
               </Badge>
             </div>
-            <div className="h-40 sm:h-64 w-full overflow-hidden rounded-t-lg">
+            <div className="h-36 sm:h-56 w-full overflow-hidden rounded-lg bg-white">
               <img
                 src={book.imageUrl}
                 alt={book.title}
-                className="h-full w-full object-cover"
+                className="h-full w-full object-contain"
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
                   target.src = "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b";
@@ -48,7 +48,7 @@ export function BookCard({ book, onLend, onReturn }: BookCardProps) {
               />
             </div>
           </div>
-          <div className="flex-1 flex flex-col p-2 sm:p-6">
+          <div className="flex-1 flex flex-col p-2 sm:p-6 pt-0 sm:pt-0">
             <div className="space-y-1">
               <CardTitle className="text-base sm:text-3xl !leading-tight line-clamp-2 font-bold">
                 {book.title}
