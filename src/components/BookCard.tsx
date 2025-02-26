@@ -36,7 +36,7 @@ export function BookCard({ book, onLend, onReturn }: BookCardProps) {
                 {book.lentTo ? "On Loan" : "Available"}
               </Badge>
             </div>
-            <div className="h-32 sm:h-48 w-full overflow-hidden rounded-t-lg">
+            <div className="h-36 sm:h-52 w-full overflow-hidden rounded-t-lg">
               <img
                 src={book.imageUrl}
                 alt={book.title}
@@ -48,35 +48,37 @@ export function BookCard({ book, onLend, onReturn }: BookCardProps) {
               />
             </div>
           </div>
-          <CardHeader className="flex-none p-2 sm:p-6">
-            <CardTitle className="text-base sm:text-3xl !leading-tight line-clamp-2 min-h-[2rem] sm:min-h-[3.5rem] font-bold">
-              {book.title}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="flex-1 flex flex-col justify-between p-2 sm:p-6 pt-0 sm:pt-0">
-            <div className="space-y-2 sm:space-y-4">
-              <div className="flex items-center gap-2 text-muted-foreground min-h-[1.25rem] sm:min-h-[1.5rem] transition-colors hover:text-foreground">
+          <div className="flex-1 flex flex-col p-2 sm:p-6">
+            <div className="space-y-1">
+              <CardTitle className="text-base sm:text-3xl !leading-tight line-clamp-2 font-bold">
+                {book.title}
+              </CardTitle>
+              <div className="flex items-center gap-2 text-muted-foreground transition-colors hover:text-foreground">
                 <span className="flex-shrink-0 text-sm sm:text-base">📝</span>
                 <span className="line-clamp-1 text-sm sm:text-base font-medium">{book.author}</span>
               </div>
-              
-              <div className="flex items-center gap-2 text-muted-foreground min-h-[1.25rem] sm:min-h-[1.5rem] transition-colors hover:text-foreground">
-                <span className="flex-shrink-0 text-sm sm:text-base">📚</span>
-                <span className="capitalize text-sm sm:text-base font-medium">{book.bookType}</span>
-              </div>
-
-              <div className="flex items-center gap-2 text-muted-foreground min-h-[1.25rem] sm:min-h-[1.5rem] transition-colors hover:text-foreground">
-                <span className="flex-shrink-0 text-sm sm:text-base">📍</span>
-                <span className="text-sm sm:text-base font-medium">{book.location}</span>
-              </div>
             </div>
 
-            <div className="text-xs sm:text-sm text-muted-foreground pt-2 sm:pt-4 font-medium">
-              {totalReactions > 0 && (
-                <span>{totalReactions} reaction{totalReactions !== 1 ? 's' : ''}</span>
-              )}
+            <div className="flex-1 flex flex-col justify-end">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4 mt-2 sm:mt-4">
+                <div className="flex items-center gap-2 text-muted-foreground transition-colors hover:text-foreground">
+                  <span className="flex-shrink-0 text-sm sm:text-base">📚</span>
+                  <span className="capitalize text-sm sm:text-base font-medium">{book.bookType}</span>
+                </div>
+
+                <div className="flex items-center gap-2 text-muted-foreground transition-colors hover:text-foreground">
+                  <span className="flex-shrink-0 text-sm sm:text-base">📍</span>
+                  <span className="text-sm sm:text-base font-medium">{book.location}</span>
+                </div>
+              </div>
+
+              <div className="text-xs sm:text-sm text-muted-foreground pt-2 sm:pt-4 font-medium">
+                {totalReactions > 0 && (
+                  <span>{totalReactions} reaction{totalReactions !== 1 ? 's' : ''}</span>
+                )}
+              </div>
             </div>
-          </CardContent>
+          </div>
         </Card>
       </div>
 
