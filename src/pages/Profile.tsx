@@ -8,19 +8,19 @@ export function Profile() {
   const navigate = useNavigate();
   
   return (
-    <main className="container">
-      <div className="max-w-2xl mx-auto pt-6">
+    <div className="container max-w-7xl mx-auto p-4 space-y-4">
+      <div className="flex items-center gap-4">
         <Button
           variant="ghost"
-          size="sm"
-          onClick={() => navigate(-1)}
-          className="mb-4"
+          size="icon"
+          onClick={() => navigate("/")}
+          className="shrink-0"
         >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back
+          <ArrowLeft className="h-4 w-4" />
         </Button>
-        <UserProfile />
+        <h1 className="text-2xl font-bold">My Profile</h1>
       </div>
-    </main>
+      <UserProfile />
+    </div>
   );
 }
