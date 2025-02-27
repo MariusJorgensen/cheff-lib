@@ -56,8 +56,8 @@ const Index = () => {
 
   if (!isApproved && !isAdmin) {
     return (
-      <div className="min-h-screen p-2 sm:p-4">
-        <div className="max-w-6xl mx-auto space-y-4">
+      <div className="min-h-screen p-8">
+        <div className="max-w-6xl mx-auto space-y-8">
           <LibraryHeader userEmail={user?.email} onSignOut={signOut} />
           <Alert>
             <AlertDescription>
@@ -70,8 +70,8 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen p-2 sm:p-4">
-      <div className="max-w-7xl mx-auto space-y-4">
+    <div className="min-h-screen p-8">
+      <div className="max-w-7xl mx-auto space-y-8">
         <LibraryHeader 
           userEmail={user?.email}
           onSignOut={signOut}
@@ -87,7 +87,7 @@ const Index = () => {
           addBookDialogRef={addBookDialogRef}
         />
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-6">
           {filteredBooks.map((book) => (
             <BookCard
               key={book.id}
