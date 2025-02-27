@@ -198,21 +198,14 @@ export function UserApprovalPanel() {
     
     setUpdating(userToDelete.id);
     try {
-      // Delete the user from auth schema via RPC call
-      const { error: deleteError } = await supabase.rpc('delete_user', {
-        user_id: userToDelete.id
-      });
+      // Delete from profiles table directly
+      // This approach uses RLS policies to control who can delete users
+      const { error: profilesDeleteError } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', userToDelete.id);
 
-      if (deleteError) {
-        // Try the alternative delete approach - delete from profiles table
-        // This will cascade to auth.users if configured properly
-        const { error: profilesDeleteError } = await supabase
-          .from('profiles')
-          .delete()
-          .eq('id', userToDelete.id);
-
-        if (profilesDeleteError) throw profilesDeleteError;
-      }
+      if (profilesDeleteError) throw profilesDeleteError;
 
       toast({
         title: "Success",
