@@ -1,6 +1,6 @@
 
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { Menu, Users, Book, Bell, UserCircle } from "lucide-react";
+import { Menu, Users, Book, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FeedbackDialog } from "@/components/FeedbackDialog";
 import { useAuth } from "@/components/AuthProvider";
@@ -110,10 +110,6 @@ export function LibraryHeader({ userEmail, onSignOut }: LibraryHeaderProps) {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => navigate("/profile")}>
-              <UserCircle className="mr-2 h-4 w-4" />
-              My Profile
-            </DropdownMenuItem>
             <DropdownMenuItem className="text-muted-foreground">
               {userEmail}
             </DropdownMenuItem>
@@ -160,10 +156,6 @@ export function LibraryHeader({ userEmail, onSignOut }: LibraryHeaderProps) {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuItem onClick={() => navigate("/profile")}>
-              <UserCircle className="mr-2 h-4 w-4" />
-              My Profile
-            </DropdownMenuItem>
             <DropdownMenuItem>
               <FeedbackDialog />
             </DropdownMenuItem>
