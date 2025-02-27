@@ -1,11 +1,12 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "./AuthProvider";
+import { useAuth } from "./useAuth";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { User, UserCog, Check, X, Shield, ShieldOff, Search } from "lucide-react";
+import { User, UserCog, Check, X, Shield, ShieldOff, Search, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -14,6 +15,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { UserDetailsDialog } from "./UserDetailsDialog";
 
 interface User {
@@ -33,6 +44,7 @@ export function UserApprovalPanel() {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"all" | "verified" | "pending">("all");
   const [selectedUser, setSelectedUser] = useState<{ id: string; name: string | null } | null>(null);
+  const [userToDelete, setUserToDelete] = useState<User | null>(null);
 
   const fetchUsers = async () => {
     try {
@@ -181,6 +193,46 @@ export function UserApprovalPanel() {
     }
   };
 
+  const handleDeleteUser = async () => {
+    if (!userToDelete) return;
+    
+    setUpdating(userToDelete.id);
+    try {
+      // Delete the user from auth schema via RPC call
+      const { error: deleteError } = await supabase.rpc('delete_user', {
+        user_id: userToDelete.id
+      });
+
+      if (deleteError) {
+        // Try the alternative delete approach - delete from profiles table
+        // This will cascade to auth.users if configured properly
+        const { error: profilesDeleteError } = await supabase
+          .from('profiles')
+          .delete()
+          .eq('id', userToDelete.id);
+
+        if (profilesDeleteError) throw profilesDeleteError;
+      }
+
+      toast({
+        title: "Success",
+        description: `User ${userToDelete.email} has been deleted.`,
+      });
+
+      setUserToDelete(null);
+      fetchUsers();
+    } catch (error: any) {
+      console.error('Error deleting user:', error);
+      toast({
+        title: "Error",
+        description: `Failed to delete user: ${error.message}`,
+        variant: "destructive",
+      });
+    } finally {
+      setUpdating(null);
+    }
+  };
+
   const filteredUsers = users.filter((u) => {
     const searchTerm = search.toLowerCase();
     const matchesSearch = 
@@ -242,8 +294,7 @@ export function UserApprovalPanel() {
         {filteredUsers.map((user) => (
           <Card 
             key={user.id} 
-            className="relative overflow-hidden group hover:shadow-lg transition-shadow duration-200 cursor-pointer"
-            onClick={() => setSelectedUser({ id: user.id, name: user.full_name })}
+            className="relative overflow-hidden hover:shadow-lg transition-shadow duration-200"
           >
             <CardContent className="p-6">
               <div className="absolute top-0 right-0 p-3">
@@ -266,7 +317,10 @@ export function UserApprovalPanel() {
               </div>
 
               <div className="space-y-4">
-                <div className="space-y-2">
+                <div 
+                  className="space-y-2 cursor-pointer"
+                  onClick={() => setSelectedUser({ id: user.id, name: user.full_name })}
+                >
                   {user.full_name && (
                     <h3 className="font-medium text-lg">{user.full_name}</h3>
                   )}
@@ -289,16 +343,28 @@ export function UserApprovalPanel() {
                       Revoke Access
                     </Button>
                   ) : (
-                    <Button
-                      variant="default"
-                      size="sm"
-                      onClick={() => handleUpdateApproval(user.id, true)}
-                      disabled={updating === user.id}
-                      className="w-full"
-                    >
-                      <Check className="w-4 h-4 mr-1" />
-                      Verify User
-                    </Button>
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <Button
+                        variant="default"
+                        size="sm"
+                        onClick={() => handleUpdateApproval(user.id, true)}
+                        disabled={updating === user.id}
+                        className="flex-1"
+                      >
+                        <Check className="w-4 h-4 mr-1" />
+                        Approve
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => setUserToDelete(user)}
+                        disabled={updating === user.id}
+                        className="flex-1"
+                      >
+                        <Trash2 className="w-4 h-4 mr-1" />
+                        Delete
+                      </Button>
+                    </div>
                   )}
                   <Button
                     variant={user.is_admin ? "destructive" : "secondary"}
@@ -332,6 +398,24 @@ export function UserApprovalPanel() {
         isOpen={!!selectedUser}
         onClose={() => setSelectedUser(null)}
       />
+      
+      <AlertDialog open={!!userToDelete} onOpenChange={(open) => !open && setUserToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete User</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete the user <strong>{userToDelete?.email}</strong>?
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteUser} className="bg-red-600 hover:bg-red-700">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
